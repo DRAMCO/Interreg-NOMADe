@@ -18197,21 +18197,6 @@ XTAL VB: ECS-327MVATX-3-CN-TR</text>
 <text x="180.34" y="10.16" size="5.08" layer="95">MCU</text>
 <text x="219.71" y="20.32" size="2.54" layer="95">Jarne Van Mulders</text>
 <text x="6.35" y="6.35" size="6.4516" layer="95">DRAMCO</text>
-<text x="284.48" y="76.2" size="5.08" layer="91">NOG TE VERBINDEN</text>
-<text x="284.48" y="71.12" size="1.778" layer="95">stcc_en</text>
-<text x="284.48" y="68.58" size="1.778" layer="95">stcc_fault</text>
-<text x="284.48" y="66.04" size="1.778" layer="95">stcc_charging</text>
-<wire x1="304.8" y1="71.12" x2="304.8" y2="66.04" width="0.1524" layer="95"/>
-<text x="307.34" y="68.58" size="1.778" layer="95">Check datasheet of de pinnen 5V tolerant zijn</text>
-<text x="307.34" y="66.04" size="1.778" layer="95">P63/357</text>
-<text x="284.48" y="60.96" size="1.778" layer="95">SD_DETECT</text>
-<text x="284.48" y="58.42" size="1.778" layer="95">SD_ON_OFF</text>
-<text x="279.4" y="60.96" size="1.778" layer="91">PA9</text>
-<text x="279.4" y="58.42" size="1.778" layer="91">PA8</text>
-<text x="279.4" y="66.04" size="1.778" layer="91">PF3</text>
-<text x="279.4" y="68.58" size="1.778" layer="91">PF4</text>
-<text x="279.4" y="71.12" size="1.778" layer="91">PF5</text>
-<wire x1="281.94" y1="78.74" x2="355.6" y2="78.74" width="0.1524" layer="95"/>
 </plain>
 <instances>
 <instance part="IC1" gate="G$1" x="50.8" y="116.84"/>
