@@ -1,10 +1,26 @@
 
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  */
+/*  ____  ____      _    __  __  ____ ___
+ * |  _ \|  _ \    / \  |  \/  |/ ___/ _ \
+ * | | | | |_) |  / _ \ | |\/| | |  | | | |
+ * | |_| |  _ <  / ___ \| |  | | |__| |_| |
+ * |____/|_| \_\/_/   \_\_|  |_|\____\___/
+ *                           research group
+ *                             dramco.be/
+ *
+ *  KU Leuven - Technology Campus Gent,
+ *  Gebroeders De Smetstraat 1,
+ *  B-9000 Gent, Belgium
+ *
+ *         File: main.c
+ *      Created: 2020-02-27
+ *       Author: Jarne Van Mulders
+ *      Version: V1.0
+ *
+ *  Description: Firmware IMU sensor module for the NOMADe project
+ *
+ *  Interreg France-Wallonie-Vlaanderen NOMADe
+ *
+ */
 
 
 /* Includes ------------------------------------------------------------------*/
@@ -85,6 +101,10 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_TIM2_Init();
   MX_FATFS_Init();
+	
+	char string [100];
+	sprintf(string, "START"); 
+	HAL_UART_Transmit(&huart3, (uint8_t *)string, strlen(string), 25);
 	
 	
 	/*	Connect with all the Bluetooth modules	*/
