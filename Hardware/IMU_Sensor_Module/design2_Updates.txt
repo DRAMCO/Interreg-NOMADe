@@ -1,0 +1,3 @@
+INT_MPU was not connected between MPU6050 and MCU
+MPU6050 FYSNC was not connected to GND
+MCU AVCC was not connected to +3.3V

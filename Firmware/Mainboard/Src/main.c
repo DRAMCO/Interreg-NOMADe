@@ -37,6 +37,7 @@ float PI = 3.14159265358979323846;
 
 static void convertBuffer(uint8_t * buf);
 static void getYawPitchRoll(int16_t *data, float *newdata);
+static uint8_t calculateCS(uint8_t * data, uint8_t len);
 
 static void MX_I2C1_Init(void);
 static void MX_SDMMC1_SD_Init(void);
@@ -111,7 +112,7 @@ int main(void)
 	SENS_connect(2);
 	
 	
-	HAL_UART_Receive_IT(&huart5, &(buf_1[0]), 92);
+	HAL_UART_Receive_IT(&huart5, &(buf_1[0]), SIZE_BT_PACKET);
 	
 	//HAL_UART_Receive_IT(&huart3, cmd_uart_control_buf, 1);
 
@@ -141,6 +142,11 @@ int main(void)
   /* USER CODE END 3 */
 }
 
+
+//#define SEND_DATA_VISUAL
+#define SEND_DATA_YPR
+//#define SEND_DATA_QUATERNIONS
+
 void convertBuffer(uint8_t * buf){
 	
 	for(int j = 0; j < NUMBER_OF_BT_PACKETS; j++){
@@ -158,11 +164,51 @@ void convertBuffer(uint8_t * buf){
 			float buf_YPR [3];
 			getYawPitchRoll(data, buf_YPR);
 			
-			char string [100];
-			//sprintf(string, "Data 0: %.2i | Data 1: %.2i | Data 2: %.2i | Data 3: %.2i\n", data[0], data[1], data[2], data[3]); 
-			sprintf(string, "Yaw: %.2f | Pitch: %.2f | Roll: %.2f\n", (buf_YPR[0]/PI*180), (buf_YPR[1]/PI*180), (buf_YPR[2]/PI*180)); 
-			HAL_UART_Transmit(&huart3, (uint8_t *)string, strlen(string), 25);
 			
+			//		*** 	Option 1: Visual		***		//
+			#ifdef SEND_DATA_VISUAL
+				char string [100];
+				//sprintf(string, "Data 0: %.2i | Data 1: %.2i | Data 2: %.2i | Data 3: %.2i\n", data[0], data[1], data[2], data[3]); 
+				//sprintf(string, "Yaw: %.2f | Pitch: %.2f | Roll: %.2f\n", (buf_YPR[0]/PI*180+180), (buf_YPR[1]/PI*180+180), (buf_YPR[2]/PI*180+180)); 
+				sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180)); 
+				HAL_UART_Transmit(&huart3, (uint8_t *)string, strlen(string), 25);
+			#endif
+			//		*** 	Option 2: Pycharm frame	YPR		***		//
+			#ifdef SEND_DATA_YPR
+				uint16_t data_hex_16 [3] = {(uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180)};
+				uint8_t data_hex_buf [10];
+				data_hex_buf [0] = 0x02;
+				data_hex_buf [1] = 0x0A;
+				data_hex_buf [2] = 0x00;
+				data_hex_buf [3] = (uint8_t)(data_hex_16 [0]);
+				data_hex_buf [4] = (uint8_t)(data_hex_16 [0] >> 8);
+				data_hex_buf [5] = (uint8_t)(data_hex_16 [1]);
+				data_hex_buf [6] = (uint8_t)(data_hex_16 [1] >> 8);
+				data_hex_buf [7] = (uint8_t)(data_hex_16 [2]);
+				data_hex_buf [8] = (uint8_t)(data_hex_16 [2] >> 8);
+				data_hex_buf [9] = calculateCS(data_hex_buf, 9);
+				
+				HAL_UART_Transmit(&huart3, data_hex_buf, sizeof(data_hex_buf), 25);
+			#endif
+			
+			//		*** 	Option 3: Pycharm frame	QUATERNIONS		***		//			
+			#ifdef SEND_DATA_QUATERNIONS
+				uint8_t data_hex_buf [12];
+				data_hex_buf [0] 	= 0x02;
+				data_hex_buf [1] 	= 0x0A;
+				data_hex_buf [2] 	= 0x00;
+				data_hex_buf [3] 	= (uint8_t)(data [0]);
+				data_hex_buf [4] 	= (uint8_t)(data [0] >> 8);
+				data_hex_buf [5] 	= (uint8_t)(data [1]);
+				data_hex_buf [6] 	= (uint8_t)(data [1] >> 8);
+				data_hex_buf [7] 	= (uint8_t)(data [2]);
+				data_hex_buf [8] 	= (uint8_t)(data [2] >> 8);
+				data_hex_buf [9] 	= (uint8_t)(data [3]);
+				data_hex_buf [10] = (uint8_t)(data [3] >> 8);
+				data_hex_buf [11] = calculateCS(data_hex_buf, 9);
+				
+				HAL_UART_Transmit(&huart3, data_hex_buf, sizeof(data_hex_buf), 25);
+			#endif
 			
 		}
 	}
@@ -194,6 +240,26 @@ void getYawPitchRoll(int16_t *data, float *newdata){
 	//euler[1] = -asin(2 * q[1] * q[3] + 2 * q[0] * q[2]);                                            // theta
 	//euler[2] = atan2(2 * q[2] * q[3] - 2 * q[0] * q[1], 2 * q[0] * q[0] + 2 * q[3] * q[3] - 1);     // phi
 	
+	
+	/*
+		// calculate gravity vector
+	gravity[0] = 2 * (q[1]*q[3] - q[0]*q[2]);
+	gravity[1] = 2 * (q[0]*q[1] + q[2]*q[3]);
+	gravity[2] = q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3];
+
+	// calculate Euler angles
+	euler[0] = atan2(2*q[1]*q[2] - 2*q[0]*q[3], 2*q[0]*q[0] + 2*q[1]*q[1] - 1);
+	euler[1] = -asin(2*q[1]*q[3] + 2*q[0]*q[2]);
+	euler[2] = atan2(2*q[2]*q[3] - 2*q[0]*q[1], 2*q[0]*q[0] + 2*q[3]*q[3] - 1);
+
+	// calculate yaw/pitch/roll angles
+	ypr[0] = atan2(2*q[1]*q[2] - 2*q[0]*q[3], 2*q[0]*q[0] + 2*q[1]*q[1] - 1);
+	ypr[1] = atan(gravity[0] / sqrt(gravity[1]*gravity[1] + gravity[2]*gravity[2]));
+	ypr[2] = atan(gravity[1] / sqrt(gravity[0]*gravity[0] + gravity[2]*gravity[2]));
+	
+	
+	*/
+	
 	// yaw: (about Z axis)
 	newdata[0] = atan2(2 * q[1] * q[2] - 2 * q[0] * q[3], 2 * q[0] * q[0] + 2 * q[1] * q[1] - 1);
 	// pitch: (nose up/down, about Y axis)
@@ -207,6 +273,19 @@ void getYawPitchRoll(int16_t *data, float *newdata){
 	}
 	
 }
+
+
+
+
+uint8_t calculateCS(uint8_t * data, uint8_t len){
+    uint8_t checksum = *(data);
+    for(uint8_t i = 1; i < len; i++){
+        checksum = checksum ^ *(data + i);
+    }
+    return checksum;
+}
+
+
 
 
 
