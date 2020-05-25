@@ -21,12 +21,25 @@ void BLUETOOTH::reset(){
     digitalWrite(BT_RES, HIGH);
 }
 
-
-void BLUETOOTH::BT_transmitData(uint8_t len, uint8_t *data){
-    BT_transmitFrame(0x04, len, data);
+uint8_t BLUETOOTH::isConnected(){
+    return digitalRead(BT_STATUS);
 }
 
-void BLUETOOTH::BT_transmitFrame(uint8_t cmd, uint16_t len, uint8_t * data){
+void BLUETOOTH::disconnect(){
+    transmitFrame(CMD_DISCONNECT_REQ, 0, NULL);
+    // NIET de beste manier, beter effectief uitlezen wat de BT module zegt
+    while(isConnected()){
+        transmitFrame(CMD_DISCONNECT_REQ, 0, NULL);
+        delay(200);
+    }
+}
+
+
+void BLUETOOTH::transmitData(uint8_t len, uint8_t *data){
+    transmitFrame(CMD_DATA_REQ, len, data);
+}
+
+void BLUETOOTH::transmitFrame(uint8_t cmd, uint16_t len, uint8_t * data){
     uint8_t tx_buffer [len + 4];
     tx_buffer [0] = 0x02;
     tx_buffer [1] = cmd;
@@ -39,7 +52,7 @@ void BLUETOOTH::BT_transmitFrame(uint8_t cmd, uint16_t len, uint8_t * data){
     UART_Write_Block(tx_buffer, (4 + len));
 }
 
-void BLUETOOTH::BT_transmitFrame(uint8_t cmd, uint8_t data){
+void BLUETOOTH::transmitFrame(uint8_t cmd, uint8_t data){
     uint8_t tx_buffer [5];
     tx_buffer [0] = 0x02;
     tx_buffer [1] = cmd;
@@ -64,12 +77,12 @@ uint8_t BLUETOOTH::calculateCS(uint8_t * data, uint8_t len){
 }
 
 
-void BLUETOOTH::BT_sleep_mode(void){
-  BT_transmitFrame(0x02, NULL, NULL);
+void BLUETOOTH::sleep_mode(void){
+  transmitFrame(CMD_SLEEP_REQ, NULL, NULL);
 }
 
-void BLUETOOTH::BT_wakeup(void){
+void BLUETOOTH::wakeup(void){
   digitalWrite(WAKE_UP_PIN, LOW);
-  delay(5);
+  delay(10);
   digitalWrite(WAKE_UP_PIN, HIGH);
 }

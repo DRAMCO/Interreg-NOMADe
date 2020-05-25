@@ -25,6 +25,8 @@ bool BMS::batStatus(){
 }
 
 bool BMS::batCharging(){
-    if(!digitalRead(BAT_CHG))   {   digitalWrite(IND_LED, HIGH);  return 1; }
-    else                        {   digitalWrite(IND_LED, LOW);   return 0; }
+    if(!digitalRead(BAT_CHG))   {   //digitalWrite(IND_LED, HIGH);  
+    return 1; }
+    else                        {   //digitalWrite(IND_LED, LOW);   
+    return 0; }
 }
