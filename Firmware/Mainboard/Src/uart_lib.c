@@ -26,6 +26,8 @@ extern uint8_t buf_4 [1840];
 extern uint8_t buf_5 [1840];
 extern uint8_t buf_6 [1840];
 
+extern uint8_t val;
+
 extern uint8_t send_1;
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *haurt){
@@ -38,11 +40,14 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *haurt){
 	if(haurt->Instance == USART3){
 		//while(1);
 	}
-	if(haurt->Instance == UART4){
+	if(haurt->Instance == USART6){
 		while(1);
 	}
+	if(haurt->Instance == UART4){
+		//while(1);
+	}
 	if(haurt->Instance == UART5){
-		while(1);
+		//while(1);
 	}
 	if(haurt->Instance == UART7){
 		while(1);
@@ -63,17 +68,36 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *haurt){
 	if(haurt->Instance == USART3){
 		while(1);
 	}
-	if(haurt->Instance == UART4){
+	if(haurt->Instance == USART6){
+		char string [5];
+		sprintf(string, "UART6\n"); 
+		HAL_UART_Transmit(&huart5, (uint8_t *)string, 5, 100);
 		while(1);
 	}
-	if(haurt->Instance == UART5){
+	if(haurt->Instance == UART4){
+		//val = 1;
+		//char string [5];
+		//sprintf(string, "UART4\n"); 
+		//HAL_UART_Transmit_IT(&huart5, (uint8_t *)string, 5);
+		//while(1);
+		
 		if(buf_1_pack_len < NUMBER_OF_BT_PACKETS * 2)		buf_1_pack_len++;
 		else 																						buf_1_pack_len = 0;
 		
 		if(buf_1_pack_len == NUMBER_OF_BT_PACKETS) 			send_1 = 1;
 		if(buf_1_pack_len == 0) 												send_1 = 2;
 		
-		HAL_UART_Receive_IT(&huart5, &(buf_1[buf_1_pack_len * 92]), 92);
+		HAL_UART_Receive_IT(&huart4, &(buf_1[buf_1_pack_len * SIZE_BT_PACKET]), SIZE_BT_PACKET);
+		
+	}
+	if(haurt->Instance == UART5){
+		char string [5];
+		sprintf(string, "UART5\n"); 
+		HAL_UART_Transmit_IT(&huart5, (uint8_t *)string, 5);
+		
+		uint8_t bbb [2];
+		HAL_UART_Receive_IT(&huart5, bbb, 2);
+		
 	}
 	if(haurt->Instance == UART7){
 		while(1);
@@ -105,7 +129,7 @@ void MX_UART4_Init(uint32_t baudrate)
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
   huart4.Init.Mode = UART_MODE_TX_RX;
-  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE; //UART_HWCONTROL_RTS_CTS;
   huart4.Init.OverSampling = UART_OVERSAMPLING_16;
   huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart4.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -201,7 +225,7 @@ void MX_UART7_Init(uint32_t baudrate)
   huart7.Init.StopBits = UART_STOPBITS_1;
   huart7.Init.Parity = UART_PARITY_NONE;
   huart7.Init.Mode = UART_MODE_TX_RX;
-  huart7.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart7.Init.HwFlowCtl = UART_HWCONTROL_NONE; //UART_HWCONTROL_RTS_CTS;;
   huart7.Init.OverSampling = UART_OVERSAMPLING_16;
   huart7.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart7.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -249,7 +273,7 @@ void MX_UART8_Init(uint32_t baudrate)
   huart8.Init.StopBits = UART_STOPBITS_1;
   huart8.Init.Parity = UART_PARITY_NONE;
   huart8.Init.Mode = UART_MODE_TX_RX;
-  huart8.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart8.Init.HwFlowCtl = UART_HWCONTROL_NONE; //UART_HWCONTROL_RTS_CTS;;
   huart8.Init.OverSampling = UART_OVERSAMPLING_16;
   huart8.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart8.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -297,7 +321,7 @@ void MX_USART1_UART_Init(uint32_t baudrate)
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
   huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE; //UART_HWCONTROL_RTS_CTS;;
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart1.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -345,7 +369,7 @@ void MX_USART2_UART_Init(uint32_t baudrate)
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
   huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE; //UART_HWCONTROL_RTS_CTS;;
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -393,7 +417,7 @@ void MX_USART3_UART_Init(uint32_t baudrate)
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
   huart3.Init.Mode = UART_MODE_TX_RX;
-  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE; //UART_HWCONTROL_RTS_CTS;;
   huart3.Init.OverSampling = UART_OVERSAMPLING_16;
   huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart3.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -420,7 +444,6 @@ void MX_USART3_UART_Init(uint32_t baudrate)
 
 }
 
-
 /**
   * @brief USART6 Initialization Function
   * @param None
@@ -442,7 +465,7 @@ void MX_USART6_UART_Init(uint32_t baudrate)
   huart6.Init.StopBits = UART_STOPBITS_1;
   huart6.Init.Parity = UART_PARITY_NONE;
   huart6.Init.Mode = UART_MODE_TX_RX;
-  huart6.Init.HwFlowCtl = UART_HWCONTROL_RTS_CTS;
+  huart6.Init.HwFlowCtl = UART_HWCONTROL_NONE; //UART_HWCONTROL_RTS_CTS;;
   huart6.Init.OverSampling = UART_OVERSAMPLING_16;
   huart6.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
   huart6.Init.ClockPrescaler = UART_PRESCALER_DIV1;
@@ -471,6 +494,18 @@ void MX_USART6_UART_Init(uint32_t baudrate)
 
 
 
+void printBuf(UART_HandleTypeDef *haurt, uint8_t *buf, uint8_t len){
+	
+	char string [100];
+	
+	for(int i = 0; i < len; i++){
+		sprintf(&(string[5*i]), "0x%X  ", (uint8_t)*(buf + i));
+	}
+	sprintf(&(string[5*len]), "\n");
+	HAL_UART_Transmit(haurt, (uint8_t *)string, 5*len + 1, 100);
+	
+}
+	
 
 
 

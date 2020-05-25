@@ -1,13 +1,16 @@
 /**
   ******************************************************************************
   * @file    ble.c
-  * @brief   STM32H7432ZI communicate with Proteus-II BT module
+  * @brief   STM32H7432ZI communicates with Proteus-II BT module
 	******************************************************************************
  **/
 
 
 #include "ble.h"
 
+extern UART_HandleTypeDef huart5; 
+
+extern uint8_t val;
 
 //	BT - MCU Communication
 
@@ -21,16 +24,102 @@ void BT_getMAC(UART_HandleTypeDef *haurt){
     //    bt_mac [i] = rx_buffer [5 + i];  
 }
 
-uint8_t BT_connect(UART_HandleTypeDef *haurt, uint8_t *mac){
-		
+uint8_t BT_connect(UART_HandleTypeDef *huart, uint8_t *mac){
+	
+	
+		// Empty receive buffer!!!!
+	
+	
 		// Eerst nakijken of het al niet verbonden is!!!!
+	
+		//serPrintln(&huart5, "Try to connect");
 		
-		BT_transmitFrame(haurt, CMD_CONNECT_REQ, 6, mac);
+		BT_transmitFrame(huart, CMD_CONNECT_REQ, 6, mac);
+	
+		uint8_t rx_buf [20];
+		if(HAL_UART_Receive(huart, rx_buf, 6, 100) == HAL_OK){
+			//serPrintln(&huart5, "OK");
+		}
+		//printBuf(&huart5, rx_buf, 6);
+		if(rx_buf[4] == 0){
+			serPrintln(&huart5, "Request understood, try to connect now");
+		}
+		else {
+			serPrintln(&huart5, "ERROR connection");
+			return 0;
+		}
+			
+		
+		if(HAL_UART_Receive(huart, rx_buf, 5, 2000) == HAL_OK){
+			//serPrintln(&huart5, "OK");
+		}
+		//printBuf(&huart5, rx_buf, 5);
+		if(rx_buf[4] == 0){
+			serPrintln(&huart5, "Bonding successful, encrypted link established");
+			//if(HAL_UART_Receive(haurt, rx_buf, 1, 2000) == HAL_OK){
+				//serPrintln(&huart5, "OK");
+			//}
+			HAL_UART_Abort(huart);
+			//printBuf(&huart5, rx_buf, 1);
+			if(HAL_UART_Receive(huart, rx_buf, 13, 5000) == HAL_OK){
+				//serPrintln(&huart5, "OK");
+			}
+			printBuf(&huart5, rx_buf, 13);
+			serPrintln(&huart5, "Channel opened successfully to module");
+		}
+		else {
+			serPrintln(&huart5, "Connection failed, e.g. due to a timeout!");
+			if(HAL_UART_Receive(huart, rx_buf, 1, 2000) == HAL_OK){
+			//serPrintln(&huart5, "OK");
+		}
+			//printBuf(&huart5, rx_buf, 1);
+			return 0;
+		}
+		
+		
+		
+		
+		/*
+		
+		HAL_UART_Receive(haurt, rx_buf, 4, 500);
+		len = rx_buf[2] | rx_buf[3] << 8;
+		if(len != 0){
+			HAL_UART_Receive(haurt, &(rx_buf[4]), len, 100);
+			HAL_UART_Transmit(&huart5, rx_buf, 4 + len, 100);
+			if(rx_buf[4]){
+				serPrintln(&huart5, "Bonding successful, encrypted link established");
+			}
+			else{
+				serPrintln(&huart5, "ERROR connection");
+				return 0;
+			}
+		}
+		
+		HAL_UART_Receive(haurt, rx_buf, 4, 1000);
+		len = rx_buf[2] | rx_buf[3] << 8;
+		if(len != 0){
+			HAL_UART_Receive(haurt, &(rx_buf[4]), len - 4, 100);
+			HAL_UART_Transmit(&huart5, rx_buf, len, 100);
+			if(rx_buf[4]){
+				serPrintln(&huart5, "Channel opened successfully to module");
+			}
+			else{
+				serPrintln(&huart5, "ERROR connection");
+				return 0;
+			}
+		}
+		*/
+		
+		
+	
+	
+	
+	/*
 		if(BT_getConnectReq(haurt)){
 			BT_getConnectInd(haurt);
 			BT_getChannelopenRSP(haurt);
 		}
-		
+		*/
 		// Moet nog aangepast worden als ConnectReq false is HW check connection anders is er zeker en vast geen connectie
 		return 1;
 		
@@ -49,6 +138,9 @@ uint8_t BT_connect(UART_HandleTypeDef *haurt, uint8_t *mac){
 		}
 	*/
 }
+
+
+
 
 uint8_t BT_disconnect(UART_HandleTypeDef *haurt){
 		return BT_transmitFrame(haurt, CMD_DISCONNECT_REQ, 0, NULL);

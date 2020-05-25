@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifdef __cplusplus
  extern "C" {
@@ -28,6 +29,8 @@ void  MX_USART2_UART_Init(uint32_t baudrate);
 void  MX_USART3_UART_Init(uint32_t baudrate);
 void  MX_USART6_UART_Init(uint32_t baudrate);
 
+
+void printBuf(UART_HandleTypeDef *haurt, uint8_t *buf, uint8_t len);
 
 void serPrint(UART_HandleTypeDef *haurt, const char* str);
 void serPrintln(UART_HandleTypeDef *haurt, const char* str);
