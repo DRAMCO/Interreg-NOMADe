@@ -16,8 +16,6 @@ class BMS {
         bool batStatus();
         bool batCharging();
 
-
-
     private:
 
 };

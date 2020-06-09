@@ -24,6 +24,7 @@ void BT_getMAC(UART_HandleTypeDef *haurt){
     //    bt_mac [i] = rx_buffer [5 + i];  
 }
 
+
 uint8_t BT_connect(UART_HandleTypeDef *huart, uint8_t *mac){
 	
 	
@@ -261,6 +262,7 @@ uint8_t BT_transmitFrame(UART_HandleTypeDef *haurt, uint8_t cmd, uint16_t len, u
     }
 		tx_buf [len + 4] = calculateCS(tx_buf, len + 4);
 		return HAL_UART_Transmit(haurt, tx_buf, (len + 5), 1000);
+		//return HAL_UART_Transmit_IT(haurt, tx_buf, (len + 5));
 }
 
 uint8_t calculateCS(uint8_t *data, uint8_t len){

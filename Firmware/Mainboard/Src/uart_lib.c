@@ -29,6 +29,7 @@ extern uint8_t buf_6 [1840];
 extern uint8_t val;
 
 extern uint8_t send_1;
+extern uint8_t send_2;
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *haurt){
 	if(haurt->Instance == USART1){
@@ -41,7 +42,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *haurt){
 		//while(1);
 	}
 	if(haurt->Instance == USART6){
-		while(1);
+		//while(1);
 	}
 	if(haurt->Instance == UART4){
 		//while(1);
@@ -69,18 +70,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *haurt){
 		while(1);
 	}
 	if(haurt->Instance == USART6){
-		char string [5];
-		sprintf(string, "UART6\n"); 
-		HAL_UART_Transmit(&huart5, (uint8_t *)string, 5, 100);
-		while(1);
+		if(buf_2_pack_len < NUMBER_OF_BT_PACKETS * 2)		buf_2_pack_len++;
+		else 																						buf_2_pack_len = 0;
+		
+		if(buf_2_pack_len == NUMBER_OF_BT_PACKETS) 			send_2 = 1;
+		if(buf_2_pack_len == 0) 												send_2 = 2;
+		
+		HAL_UART_Receive_IT(&huart6, &(buf_2[buf_2_pack_len * SIZE_BT_PACKET]), SIZE_BT_PACKET);
+		
 	}
 	if(haurt->Instance == UART4){
-		//val = 1;
-		//char string [5];
-		//sprintf(string, "UART4\n"); 
-		//HAL_UART_Transmit_IT(&huart5, (uint8_t *)string, 5);
-		//while(1);
-		
 		if(buf_1_pack_len < NUMBER_OF_BT_PACKETS * 2)		buf_1_pack_len++;
 		else 																						buf_1_pack_len = 0;
 		

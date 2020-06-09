@@ -38,6 +38,29 @@
 
 
 
+// ================================================================
+// ===       	Define Communication Commands (IMU Module)        ===
+// ================================================================
+
+#define IMU_SENSOR_MODULE_GET_STATUS               0x30
+
+#define IMU_SENSOR_MODULE_SEND_BATTERY_VOLTAGE     0x40
+#define IMU_SENSOR_MODULE_GET_BATTERY_VOLTAGE      0x41
+#define IMU_SENSOR_MODULE_GET_BATTERY_LOW_ERROR    0x42
+
+#define IMU_SENSOR_MODULE_SEND_START_SYNC          0x60
+#define IMU_SENSOR_MODULE_GET_SYNC_DONE            0x61
+
+#define IMU_SENSOR_MODULE_SEND_START_CALIBRATION   0x70
+#define IMU_SENSOR_MODULE_GET_CANNOT_CALIBRATE     0x71
+#define IMU_SENSOR_MODULE_GET_CALIBRATION_DONE     0x72
+#define IMU_SENSOR_MODULE_GET_NEED_TO_CALIBRATE    0x73
+
+
+
+
+
+
 
 
 

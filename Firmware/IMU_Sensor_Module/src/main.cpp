@@ -30,6 +30,7 @@
 #include "BMS.h"
 #include "Bluetooth.h"
 
+
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
     #include "Wire.h"
 #endif
@@ -46,6 +47,7 @@
  * ----- Check received message from ble module when go low power (voor de zekerheid)
  * OK -- When sending data check first if there is a connection
  * ----- Send Battery voltage
+ * ----- Writing Module Test software (for new modules)
  * ...
  */
 
@@ -61,47 +63,46 @@ BLUETOOTH bt;
 // ===                      State Machine                       ===
 // ================================================================
 
-
-enum Sensor_Reader_State{SLEEP, CALIBRATION, IDLE, RUNNING, CHARGING};
+enum Sensor_Reader_State{SLEEP, CALIBRATION, IDLE, SYNC, RUNNING, CHARGING, BATTERY_LOW};
 uint8_t state = SLEEP;
 
-bool calibartion = 0;
+bool calibration = 0;
 bool status_periferals = 0;
-
 
 // ================================================================
 // ===              Global buffers and variables                ===
 // ================================================================
 
-bool dmpReady = false;              //  Set true if DMP init was successful
-bool blinkState = false;
-bool running = true;
+//bool dmpReady = false;              //  Set true if DMP init was successful
 bool interruptIMU = false;
 uint8_t mpuIntStatus;               //  Holds actual interrupt status byte from MPU
-uint8_t devStatus;                  //  Return status after each device operation (0 = success, !0 = error)
-uint16_t fifoCount;                 //  Count of all bytes currently in FIFO
-uint8_t fifoBuffer[64];             //  FIFO storage buffer
 
 uint8_t buffer_counter = 0;         //  Global variable (number of sensor read outs before sending)
 uint8_t packet_number_counter = 0;  //  Send packet after counter is same as PACK_NRS_BEFORE_SEND
 uint8_t data [8* MAX_BUFFER_SIZE];  //  Data buffer
 
 
+uint8_t rsv_buffer [20];
+
 // ================================================================
 // ===                  STATIC VOID FUNCTIONS                   ===
 // ================================================================
 
-static void LED_blink(uint8_t num, uint8_t wait_time);
+static void LED_blink(uint8_t num, uint16_t wait_time);
+static void LED_blink(uint8_t num, uint16_t on_time, uint16_t off_time);
 static void IND_LED_On();
 static void IND_LED_Off();
 static void processIMUData(void);
-static void runcode(void);
 static void shutdown_periferals();
 static void start_periferals();
 
-static void MPU_powerdown();
-static void MPU_powerup();
-static void MPU_calibrate();
+static void communication_management();
+static void rsv_msg_handler(uint8_t * command_msg);
+
+static void MPU_powerdown(void);
+static void MPU_powerup(void);
+static void MPU_calibrate(void);
+static void MPU_Start_DMP(void);
 
 static void Error_Handler(void);
 
@@ -109,18 +110,19 @@ static void Error_Handler(void);
 // ===               INTERRUPT DETECTION ROUTINE                ===
 // ================================================================
 
+  //  Interrupt MPU6050
 void dmpData(void){
   interruptIMU = true;
 }
 
+  //  Wake up ISR
 void wakeUpISR(void){
 }
 
-void sleepISR()
-{
+  //  Sleep ISR
+void sleepISR(){
   if(state != SLEEP) state = SLEEP;
 }
-
 
 // ================================================================
 // ===                      INITIAL SETUP                       ===
@@ -137,14 +139,11 @@ void setup(){
 
     Serial.begin(115200);
 
-
-
       //  Configure IN- and OUTPUTS
     pinMode(MPU_INT, INPUT);
     pinMode(IND_LED, OUTPUT);
     pinMode(MPU_ON, OUTPUT);
     
-
       //  Default pin states
     digitalWrite(MPU_ON, HIGH);
     digitalWrite(IND_LED, LOW);
@@ -152,55 +151,64 @@ void setup(){
       //  Initialise
     bms.init();
     bt.init();
-    bt.reset();
 
       //  Set analog reference to 1.1V
     analogReference(INTERNAL);
 
-    //MPU_calibrate();
-
+      // Reset BT module
     bt.reset();
+    delay(100);
+    
+      //  Clear Receive Buffer
+    //while(Serial.available() > 0){
+    //  communication_management();
+    //}
 
-    //start_periferals();
+      //  Update UART Baudrate (MCU + BT module)
+    //bt.updateBaudrate(BT_UART_BAUDRATE);
 
-    //attachInterrupt(digitalPinToInterrupt(MPU_INT), dmpData, RISING);
-    //attachInterrupt(digitalPinToInterrupt(BUTTON_INT), sleepISR, RISING);
-    //attachInterrupt(digitalPinToInterrupt(MPU_INT), dmpData, FALLING);
-    //attachInterrupt(digitalPinToInterrupt(BUTTON_INT), sleepISR, FALLING);
+
+      /*  MAG WEG  */
+    //delay(4000);
+    //Serial.write(0x14);
+    Serial.write(0x99);
+    //delay(100);
+
 }
 
 // ================================================================
 // ===                    MAIN PROGRAM LOOP                     ===
 // ================================================================
-/*
-void loop() 
-{
-    // Allow wake up pin to trigger interrupt on low.
-    attachInterrupt(digitalPinToInterrupt(BUTTON_INT), sleepISR, RISING);
-    
-    // Enter power down state with ADC and BOD module disabled.
-    // Wake up when wake up pin is low.
-    LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
-    
-    // Disable external pin interrupt on wake up pin.
-    detachInterrupt(0); 
-    
-
-    LED_blink(2, 200);
-    // Do something here
-    // Example: Read sensor, data logging, data transmission.
-}
-*/
-
-
 
 void loop(){
   
   // Eerst kijken of de batterij spanning voldoende is 
-  if(!bms.batStatus())    state = SLEEP;
+  if(!bms.batStatus())    state = BATTERY_LOW;
   // Vervolgens kijken of de batterij wordt geladen
   if(bms.batCharging())   state = CHARGING;
-  
+
+  if(status_periferals && state != RUNNING){
+    if(Serial.available()){
+      communication_management();
+    }
+  }
+
+  //  Nog steeds een porbleem met het uitvoeren van communication_management tijdens RUNNING
+  /*
+  if(state == RUNNING && (buffer_counter == 2 || buffer_counter == 6)) {
+    communication_management();
+  }*/
+
+  // Alternatieve oplossing
+  if(state == RUNNING){
+    if(Serial.available() > 0)
+      if(Serial.read() == CMD_DATA_IND){
+        state = IDLE;
+        mpu.setDMPEnabled(0); //  Disable DMP
+      }
+  }
+
+
   switch(state){
     case SLEEP:
       detachInterrupt(0);
@@ -216,21 +224,36 @@ void loop(){
 
       break;
     
-    case CALIBRATION:
-      if(calibartion)
-        state = RUNNING;
-      else {
-        MPU_calibrate();
-        calibartion = 1;
-      }
-      break;
-    
     case IDLE:
       // wachten op een start commando of een BT connectie
       if(!status_periferals)  start_periferals();
-      if(bt.isConnected())    state = CALIBRATION;
-      else                    LED_blink(2, 200);
+      if(bt.isConnected())  {   
+        if(!calibration){
+          LED_blink(1, 50, 350); 
+        }
+        else delay(5); 
+      }
+      else{
+        LED_blink(1, 200);
+      }
       break;
+
+    case CALIBRATION:
+      if(calibration){
+        //  Already callibrated
+        state = IDLE;
+      }
+      else {
+        //  Start callibration
+        MPU_calibrate();
+        calibration = 1;
+        bt.transmitFrameMsg(IMU_SENSOR_MODULE_SEND_CALIBRATION_DONE);
+      }
+      break;
+
+    case SYNC:
+      MPU_Start_DMP();      /***    Start IMU DMP     ***/
+      state = RUNNING;
     
     case RUNNING:
       if(bt.isConnected()){
@@ -250,7 +273,13 @@ void loop(){
         state = SLEEP;
         IND_LED_Off();
       }
+      break;
 
+    case BATTERY_LOW:
+      if(bt.isConnected()){
+        //  Send battery low message
+      }
+      state = SLEEP;
       break;
 
     default:
@@ -259,67 +288,109 @@ void loop(){
 }
 
 
+void communication_management(){
+  uint8_t rsv_buffer [50];
+  if(bt.receiveFrame(rsv_buffer)){
+    
+    switch(rsv_buffer [1]){
+      case CMD_DATA_CNF:
+        //  Data transmission request received
+        break;
+
+      case CMD_TXCOMPLETE_RSP:
+        //  Data has been sent
+        break;
+
+      case CMD_GETSTATE_CNF:
+        //  Current module state
+        break;
+
+      case CMD_CONNECT_IND:
+        //  Connection established
+        break;
+
+      case CMD_CHANNELOPEN_RSP:
+        //  Channel open, data transmission possible
+        break;
+
+      case CMD_DISCONNECT_CNF:
+        //  Disconnection request received
+        break;
+      
+      case CMD_DISCONNECT_IND:
+        //  Disconnected
+        break;
+
+      case CMD_SLEEP_CNF:
+        //  Sleep request received
+        break;
+
+      case CMD_DATA_IND:
+        //  Data has been received
+        rsv_msg_handler(&rsv_buffer[11]);
+        break;
+
+      default:
+        break;
+    }
 
 
-// ================================================================
-// ===                    MAIN PROGRAM LOOP                     ===
-// ================================================================
-/*
-void loop() {
-  if(bms.batCharging())   running = 0;  //{ running = 0;  Serial.println("Battery charging");   }
-  if(!bms.batStatus())    running = 0;  //{ running = 0;  Serial.println("Low battery");        }
-
-  if(running){
-    runcode();
-  }
-  else{
-      //  Not running so go low power and check bat charging
-    detachInterrupt(0);
-    LED_blink(2, 200);
-    MPU_powerdown();
-    bt.sleep_mode();
-    delay(100);
-    //LowPower.powerDown(SLEEP_250MS, ADC_OFF, BOD_OFF); 
-    attachInterrupt(0, wakeUpISR, LOW);
-    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF); 
-    detachInterrupt(0);
-    running = true;
-    LED_blink(3, 100);
-    delay(10);
-    bms.batCharging();
-    MPU_powerup();
-    delay(10);
-    //mpu.resetFIFO();
-    bt.wakeup();
-    delay(10);
-    bt.reset();
-    //MPU kalibration
-    MPU_calibrate();
-    Serial.flush();
-    attachInterrupt(digitalPinToInterrupt(BUTTON_INT), sleepISR, RISING);
-    attachInterrupt(digitalPinToInterrupt(MPU_INT), dmpData, RISING);
+    //if(rsv_buffer [1] != 0)
+    //  Serial.write(rsv_buffer [1]);
   }
 }
-*/
+
+
+void rsv_msg_handler(uint8_t * command_msg){
+
+  switch(*command_msg){
+    case IMU_SENSOR_MODULE_GET_STATUS:
+        //  Send module status
+      bt.transmitFrameMsg(IMU_SENSOR_MODULE_GET_STATUS, 1, &state);
+      break;
+
+    case IMU_SENSOR_MODULE_GET_BATTERY_VOLTAGE:
+        //  Send battery voltage
+      
+          /*****    TO DO   ****/
+
+      break;
+
+    case IMU_SENSOR_MODULE_GET_START_CALIBRATION:
+      if(state == IDLE){
+        state = CALIBRATION;      /***    Start calibration     ***/
+      }
+      else{
+          //  Send msg, cannot calibrate!!
+        bt.transmitFrameMsg(IMU_SENSOR_MODULE_SEND_CANNOT_CALIBRATE);
+      }
+      break;
+
+    case IMU_SENSOR_MODULE_GET_START_SYNC:
+      // Start measurements
+      if(calibration){
+          //  Send msg, SYNC started
+        bt.transmitFrameMsg(IMU_SENSOR_MODULE_SEND_SYNC_DONE);
+        state = SYNC;
+      }
+      else{
+          //  Send msg, first need to callibrate.
+        bt.transmitFrameMsg(IMU_SENSOR_MODULE_SEND_NEED_TO_CALIBRATE);
+      }
+      break;
+
+    default:
+      break;
+
+  }
+
+}
+
 
 
 // ================================================================
 // ===                  STATIC VOID FUNCTIONS                   ===
 // ================================================================
-
-void runcode(void){
-  #ifdef IMU
-    if(interruptIMU){
-      interruptIMU = false;
-      processIMUData();
-    }
-    /*else{
-      Serial.flush();
-      LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
-    }*/
-  #endif
-}
-
 
 void processIMUData(void){
 
@@ -331,8 +402,8 @@ void processIMUData(void){
     return;
   }
 
-    //  Reset interrupt flag and get INT_STATUS byte
-  //mpuInterrupt = false;
+  uint16_t fifoCount;                 //  Count of all bytes currently in FIFO
+  uint8_t fifoBuffer[64];             //  FIFO storage buffer
   
   fifoCount = mpu.getFIFOCount();
   mpuIntStatus = mpu.getIntStatus();
@@ -344,7 +415,6 @@ void processIMUData(void){
   else if ((mpuIntStatus & _BV(MPU6050_INTERRUPT_FIFO_OFLOW_BIT)) || fifoCount >= 1024) {
     // reset so we can continue cleanly
     mpu.resetFIFO();
-    //  fifoCount = mpu.getFIFOCount();  // will be zero after reset no need to ask
     #ifdef DEBUG
       Serial.println(F("FIFO overflow!"));
     #endif
@@ -352,8 +422,7 @@ void processIMUData(void){
   }
 
 
-  else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)) {
-
+  else if (mpuIntStatus & _BV(MPU6050_INTERRUPT_DMP_INT_BIT)){
       //  Read a packet from FIFO
     while(fifoCount >= PACKETSIZE){ // Lets catch up to NOW, someone is using the dreaded delay()!
       mpu.getFIFOBytes(fifoBuffer, PACKETSIZE);
@@ -362,13 +431,11 @@ void processIMUData(void){
       fifoCount -= PACKETSIZE;
     }
 
-    //digitalWrite(IND_LED, LOW);
     if(buffer_counter >= MAX_BUFFER_SIZE){
       buffer_counter = 0;
-      bt.transmitData(8*MAX_BUFFER_SIZE, data);
+      bt.transmitData(8 * MAX_BUFFER_SIZE, data);
       digitalWrite(IND_LED, HIGH);
     }
-
     
     data [0 + 8*buffer_counter] = fifoBuffer[0];
     data [1 + 8*buffer_counter] = fifoBuffer[1];
@@ -384,7 +451,7 @@ void processIMUData(void){
   }
 }
 
-void LED_blink(uint8_t num, uint8_t wait_time){
+void LED_blink(uint8_t num, uint16_t wait_time){
   for(int i = 0; i < num; i++){
     digitalWrite(IND_LED, HIGH);
     delay(wait_time);
@@ -393,39 +460,62 @@ void LED_blink(uint8_t num, uint8_t wait_time){
   }
 }
 
-void IND_LED_On(){
+void LED_blink(uint8_t num, uint16_t on_time, uint16_t off_time){
+  for(int i = 0; i < num; i++){
+    digitalWrite(IND_LED, HIGH);
+    delay(on_time);
+    digitalWrite(IND_LED, LOW);
+    delay(off_time);
+  }
+}
+
+void IND_LED_On(void){
   digitalWrite(IND_LED, HIGH);
 }
 
-void IND_LED_Off(){
+void IND_LED_Off(void){
   digitalWrite(IND_LED, LOW);
 }
 
 
 
 
-void shutdown_periferals(){
-  calibartion = 0;
+void shutdown_periferals(void){
+  calibration = 0;
   status_periferals = 0;
   MPU_powerdown();
-  bt.disconnect();
-  delay(10);
-  bt.sleep_mode();
+  if(bt.isConnected()){
+    bt.disconnect();
+    //catch_receive_msg();//12, 500);
+  }
   delay(100);
+  bt.sleep_mode();
+  //catch_receive_msg();//6, 500);
+
+  delay(10);
+  
+  for(uint8_t i = 0; i < 5; i++)  communication_management();
+
+  delay(10);
+  Serial.flush();
   LED_blink(2, 200);
 }
 
-void start_periferals(){
+void start_periferals(void){
   status_periferals = 1;
   LED_blink(3, 100);
   delay(10);
   MPU_powerup();
   delay(10);
+  Serial.flush();
   bt.wakeup();
   delay(10);
-  bt.reset();
-  delay(100);
-  Serial.flush();
+  //catch_receive_msg();//7, 500);
+  //delay(10);
+  //bt.reset();
+  //Serial.flush();
+  //delay(100);
+  //Serial.flush();
   attachInterrupt(digitalPinToInterrupt(BUTTON_INT), sleepISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(MPU_INT), dmpData, FALLING);
 }
@@ -436,7 +526,7 @@ void start_periferals(){
 // ================================================================
 
 
-void MPU_calibrate(){
+void MPU_calibrate(void){
   #ifdef DEBUG
     DEBUG Serial.println(F("Initializing I2C devices...")); 
   #endif
@@ -460,6 +550,7 @@ void MPU_calibrate(){
     Serial.println(F("Initializing DMP..."));
   #endif
 
+  uint8_t devStatus;                  //  Return status after each device operation (0 = success, !0 = error)
   devStatus = mpu.dmpInitialize();
 
   //  Supply your own gyro offsets here, scaled for min sensitivity
@@ -484,7 +575,7 @@ void MPU_calibrate(){
         Serial.println(F("Enabling DMP..."));
       #endif
 
-      mpu.setDMPEnabled(true);
+      //mpu.setDMPEnabled(true);
 
       #ifdef DEBUG
         // enable Arduino interrupt detection
@@ -494,14 +585,14 @@ void MPU_calibrate(){
       #endif
 
       //attachInterrupt(digitalPinToInterrupt(MPU_INT), dmpDataReady, RISING);
-      mpuIntStatus = mpu.getIntStatus();
+      //mpuIntStatus = mpu.getIntStatus();
 
       #ifdef DEBUG
         // set our DMP Ready flag so the main loop() function knows it's okay to use it
         Serial.println(F("DMP ready! Waiting for first interrupt..."));
       #endif
 
-      dmpReady = true;
+      //dmpReady = true;
 
       // get expected DMP packet size for later comparison
       //packetSize = mpu.dmpGetFIFOPacketSize();
@@ -524,11 +615,17 @@ void MPU_calibrate(){
   #endif
 }
 
-void MPU_powerdown(){
+
+void MPU_Start_DMP(void){
+  mpu.setDMPEnabled(true);
+  mpuIntStatus = mpu.getIntStatus();
+}
+
+void MPU_powerdown(void){
   digitalWrite(MPU_ON, LOW);
 }
 
-void MPU_powerup(){
+void MPU_powerup(void){
   digitalWrite(MPU_ON, HIGH);
 }
 

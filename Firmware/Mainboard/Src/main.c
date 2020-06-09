@@ -65,12 +65,16 @@ uint8_t buf_6 [SIZE_PING_PONG_BUFFER * 2];
 
 
 uint8_t send_1;
+uint8_t send_2;
 
 
 uint16_t file_nummer = 0;
 
 
 uint8_t gpio_buf_IC5 = 0x00;
+
+
+int num_send_1 = 0, num_send_2 = 0;
 
 
 
@@ -167,28 +171,99 @@ int main(void)
  
   /* Connect with all the Bluetooth modules */
   SENS_connect(1);
+	SENS_connect(2);
   
   HAL_Delay(1000);
   
   
   /* Clear UART4 buffer */
   HAL_UART_Abort(&huart4);
+	HAL_UART_Abort(&huart6);
+	
+	
+	
+	uint8_t dat [1]; 
+	uint8_t buffer [100];
+	
+	//------------- CALIBRATIE -------------//
+	
+	dat [0] = IMU_SENSOR_MODULE_SEND_START_CALIBRATION; 
+	BT_transmitFrame(&huart4, 0x04, 0x01, dat);						//****	SENSOR 1: SEND CALIBRATION START MSG	****//
+	BT_transmitFrame(&huart6, 0x04, 0x01, dat);						//****	SENSOR 2: SEND CALIBRATION START MSG	****//
+	
+	HAL_UART_Receive(&huart4, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
+	HAL_UART_Receive(&huart6, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
+	
+	//HAL_UART_Transmit(&huart5, buffer, 12, 1000);   		// 	DEBUG PRINT -- eventueel nakijken??
+	
+	
+	HAL_Delay(3000);																			//	Waiting during the calibration	//
+	
+	
+	HAL_UART_Receive(&huart4, buffer, 13, 1000); 					//****	SENSOR 1: GET AND CHECK ANWSER	****//
+	HAL_UART_Receive(&huart6, buffer, 13, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
+	
+	//HAL_UART_Transmit(&huart5, buffer, 13, 1000);   		// 	DEBUG PRINT -- eventueel nakijken??
+	
+	HAL_Delay(1000);
+	
+	// 	CHECK ANSWER -- EVENTUALLY DO RECALIBRATION
+	
+	//-------------------------------------//
+	
+	
+	
+	//----------- START GELIJKTIJDIG DE SENSOREN OP ----------//
+	dat [0] = IMU_SENSOR_MODULE_SEND_START_SYNC; 			
+	BT_transmitFrame(&huart4, 0x04, 0x01, dat);						//****	SENSOR 1: SEND START MEASUREMENTS MSG	****//
+	BT_transmitFrame(&huart6, 0x04, 0x01, dat);						//****	SENSOR 2: SEND START MEASUREMENTS MSG	****//
+	
+	HAL_UART_Receive(&huart4, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
+	HAL_UART_Receive(&huart6, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
+	
+	//HAL_UART_Transmit(&huart5, buffer, 12, 1000);   		// 	DEBUG PRINT -- eventueel nakijken??
+	
+	HAL_UART_Receive(&huart4, buffer, 13, 1000); 					//****	SENSOR 1: GET AND CHECK ANWSER	****//
+	HAL_UART_Receive(&huart6, buffer, 13, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
+	
+	// 	CHECK ANSWER -- EVENTUALLY ABORT IF THERE WAS A SENSOR NOT STARTED
+	
+	//--------------------------------------------------------//
+	
+	HAL_Delay(100);
+	HAL_UART_Abort(&huart4);
+	HAL_UART_Abort(&huart6);
+	
   
   /* Start receiving frames from BT1 */
   HAL_UART_Receive_IT(&huart4, &(buf_1[0]), SIZE_BT_PACKET);
+	
+	HAL_UART_Receive_IT(&huart6, &(buf_2[0]), SIZE_BT_PACKET);
  
 
-  while (1)
-  {
+  while (1){
     if(send_1 == 1){
       send_1 = 0;
-      serPrintln(&huart5, "\nSend_1_1 active");
+      serPrintln(&huart5, "\nSENSOR 1: Send_1_1 active");
       convertBuffer(&buf_1[0]);
+			num_send_1++;
     }
     if(send_1 == 2){
       send_1 = 0;
-      serPrintln(&huart5, "\nSend_1_2 active");
+      serPrintln(&huart5, "\nSENSOR 1: Send_1_2 active");
       convertBuffer(&buf_1[SIZE_PING_PONG_BUFFER]);
+    }
+		
+		if(send_2 == 1){
+      send_2 = 0;
+      serPrintln(&huart5, "\nSENSOR 2: Send_2_1 active");
+      convertBuffer(&buf_2[0]);
+			num_send_2++;
+    }
+    if(send_2 == 2){
+      send_2 = 0;
+      serPrintln(&huart5, "\nSENSOR 2: Send_2_2 active");
+      convertBuffer(&buf_2[SIZE_PING_PONG_BUFFER]);
     }
         
   }
@@ -315,7 +390,8 @@ void convertBuffer(uint8_t * buf){
         char string [100];
         //sprintf(string, "Data 0: %.2i | Data 1: %.2i | Data 2: %.2i | Data 3: %.2i\n", data[0], data[1], data[2], data[3]); 
         //sprintf(string, "Yaw: %.2f | Pitch: %.2f | Roll: %.2f\n", (buf_YPR[0]/PI*180+180), (buf_YPR[1]/PI*180+180), (buf_YPR[2]/PI*180+180)); 
-        sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180)); 
+        //sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180)); 
+				sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i, %i, %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1, num_send_2); 
         HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
       #endif
       //    ***   Option 2: Pycharm frame YPR   ***   //
@@ -592,6 +668,11 @@ void startUpLeds(void){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
   HAL_GPIO_TogglePin(LED_GOOD_GPIO_Port, LED_GOOD_Pin);
+	
+	//char string [100];
+	//sprintf(string, "num_send_1: %i | num_send_2: %i \n", num_send_1, num_send_2);
+	//HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
+	
   //char string [100];
   //sprintf(string, "Busy\n"); 
   //HAL_UART_Transmit_IT(&huart5, (uint8_t *)string, strlen(string));
