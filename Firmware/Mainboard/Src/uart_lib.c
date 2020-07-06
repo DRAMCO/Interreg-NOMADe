@@ -70,7 +70,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *haurt){
 		while(1);
 	}
 	if(haurt->Instance == USART6){
-		if(buf_2_pack_len < NUMBER_OF_BT_PACKETS * 2)		buf_2_pack_len++;
+		if(buf_2_pack_len < NUMBER_OF_BT_PACKETS)				buf_2_pack_len++;
 		else 																						buf_2_pack_len = 0;
 		
 		if(buf_2_pack_len == NUMBER_OF_BT_PACKETS) 			send_2 = 1;
@@ -80,7 +80,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *haurt){
 		
 	}
 	if(haurt->Instance == UART4){
-		if(buf_1_pack_len < NUMBER_OF_BT_PACKETS * 2)		buf_1_pack_len++;
+		if(buf_1_pack_len < NUMBER_OF_BT_PACKETS)				buf_1_pack_len++;
 		else 																						buf_1_pack_len = 0;
 		
 		if(buf_1_pack_len == NUMBER_OF_BT_PACKETS) 			send_1 = 1;

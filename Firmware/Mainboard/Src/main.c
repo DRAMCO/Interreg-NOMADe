@@ -50,7 +50,7 @@ UART_HandleTypeDef huart7;  //  BT3
 UART_HandleTypeDef huart8;  //  BT4
 UART_HandleTypeDef huart1;  //  BT5
 UART_HandleTypeDef huart2;  //  BT6
-UART_HandleTypeDef huart3;  //  TABLET
+UART_HandleTypeDef huart3;  //  FT312D -- TABLET
 UART_HandleTypeDef huart6;  //  BT2
 
 
@@ -181,15 +181,54 @@ int main(void)
 	HAL_UART_Abort(&huart6);
 	
 	
-	
 	uint8_t dat [1]; 
 	uint8_t buffer [100];
 	
+	
+	//----------- PRINT BATTERY VOLTAGE ----------//
+	dat [0] = IMU_SENSOR_MODULE_REQ_BATTERY_VOLTAGE; 			
+	BT_transmitFrame(&huart6, 0x04, 0x01, dat);						//****	SENSOR 2: REQ BATTERY VOLTAGE	****//
+	
+	HAL_UART_Receive(&huart6, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
+	
+	HAL_UART_Receive(&huart6, buffer, 15, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
+	
+	float voltage = (buffer[12] | buffer[13] << 8)/100.0;
+	sprintf(string, "Battery voltage: %.02f V\n", voltage); 
+	HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
+	
+	
+	
+	BT_transmitFrame(&huart4, 0x04, 0x01, dat);						//****	SENSOR 1: REQ BATTERY VOLTAGE	****//
+	
+	HAL_UART_Receive(&huart4, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
+	
+	HAL_UART_Receive(&huart4, buffer, 15, 1000); 					//****	SENSOR 1: GET AND CHECK ANWSER	****//
+	
+	voltage = (buffer[12] | buffer[13] << 8)/100.0;
+	sprintf(string, "Battery voltage: %.02f V\n", voltage); 
+	HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
+	
+	
+	//-------------------------------------------//
+	
+	
+		/* Clear UART4 buffer */
+  HAL_UART_Abort(&huart4);
+	HAL_UART_Abort(&huart6);
+	
+	HAL_Delay(100);
+	
+	
 	//------------- CALIBRATIE -------------//
 	
-	dat [0] = IMU_SENSOR_MODULE_SEND_START_CALIBRATION; 
+	dat [0] = IMU_SENSOR_MODULE_REQ_START_CALIBRATION; 
 	BT_transmitFrame(&huart4, 0x04, 0x01, dat);						//****	SENSOR 1: SEND CALIBRATION START MSG	****//
 	BT_transmitFrame(&huart6, 0x04, 0x01, dat);						//****	SENSOR 2: SEND CALIBRATION START MSG	****//
+	
+	
+	//ja &huart4->RxXferCount
+	
 	
 	HAL_UART_Receive(&huart4, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
 	HAL_UART_Receive(&huart6, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
@@ -214,7 +253,7 @@ int main(void)
 	
 	
 	//----------- START GELIJKTIJDIG DE SENSOREN OP ----------//
-	dat [0] = IMU_SENSOR_MODULE_SEND_START_SYNC; 			
+	dat [0] = IMU_SENSOR_MODULE_REQ_START_SYNC; 			
 	BT_transmitFrame(&huart4, 0x04, 0x01, dat);						//****	SENSOR 1: SEND START MEASUREMENTS MSG	****//
 	BT_transmitFrame(&huart6, 0x04, 0x01, dat);						//****	SENSOR 2: SEND START MEASUREMENTS MSG	****//
 	
@@ -225,12 +264,11 @@ int main(void)
 	
 	HAL_UART_Receive(&huart4, buffer, 13, 1000); 					//****	SENSOR 1: GET AND CHECK ANWSER	****//
 	HAL_UART_Receive(&huart6, buffer, 13, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
-	
 	// 	CHECK ANSWER -- EVENTUALLY ABORT IF THERE WAS A SENSOR NOT STARTED
 	
 	//--------------------------------------------------------//
 	
-	HAL_Delay(100);
+	//HAL_Delay(1000);
 	HAL_UART_Abort(&huart4);
 	HAL_UART_Abort(&huart6);
 	
@@ -276,6 +314,9 @@ int main(void)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   if(GPIO_Pin == USER_BUTTON_Pin){ //GPIO_PIN_2
     HAL_GPIO_TogglePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin);
+		uint8_t dat [] = {IMU_SENSOR_MODULE_REQ_GO_TO_SLEEP};
+		BT_transmitFrame(&huart4, 0x04, 0x01, dat);
+		BT_transmitFrame(&huart6, 0x04, 0x01, dat);
   }
 }
 
@@ -361,6 +402,8 @@ void printSystemTick(){
 #define SAVE_SD_CARD
 
 void convertBuffer(uint8_t * buf){
+	
+	uint32_t systemtick = HAL_GetTick();
   
   #ifdef SAVE_SD_CARD
     uint16_t sd_card_buffer [20][3];
@@ -391,8 +434,9 @@ void convertBuffer(uint8_t * buf){
         //sprintf(string, "Data 0: %.2i | Data 1: %.2i | Data 2: %.2i | Data 3: %.2i\n", data[0], data[1], data[2], data[3]); 
         //sprintf(string, "Yaw: %.2f | Pitch: %.2f | Roll: %.2f\n", (buf_YPR[0]/PI*180+180), (buf_YPR[1]/PI*180+180), (buf_YPR[2]/PI*180+180)); 
         //sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180)); 
-				sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i, %i, %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1, num_send_2); 
-        HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
+				sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i, %i, %i, %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1, num_send_2, systemtick); 
+				//sprintf(string, "Timestamp: %i - Yaw: %i | Pitch: %i | Roll: %i - %i\n", systemtick, (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1); 
+				HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
       #endif
       //    ***   Option 2: Pycharm frame YPR   ***   //
       #ifdef SEND_DATA_YPR
@@ -449,7 +493,7 @@ void convertBuffer(uint8_t * buf){
     sprintf(path, "MET_%d.TXT", file_nummer);
     f_open(&myFILE, path, FA_OPEN_APPEND | FA_WRITE); 
     for(int i = 0; i < SIZE_SD_CARD_READ_BUF; i++){
-      f_printf(&myFILE, "%d,%d,%d\n", (uint16_t)(sd_card_buffer[i][0]), (uint16_t)(sd_card_buffer[i][1]), (uint16_t)(sd_card_buffer[i][2]));
+      f_printf(&myFILE, "%d,%d,%d,%d\n", systemtick, (uint16_t)(sd_card_buffer[i][0]), (uint16_t)(sd_card_buffer[i][1]), (uint16_t)(sd_card_buffer[i][2]));
     }
     f_close(&myFILE);
     HAL_GPIO_TogglePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin);   
@@ -668,6 +712,7 @@ void startUpLeds(void){
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
   HAL_GPIO_TogglePin(LED_GOOD_GPIO_Port, LED_GOOD_Pin);
+	HAL_GPIO_WritePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin, 0);
 	
 	//char string [100];
 	//sprintf(string, "num_send_1: %i | num_send_2: %i \n", num_send_1, num_send_2);
