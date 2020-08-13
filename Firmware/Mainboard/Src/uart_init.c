@@ -6,7 +6,7 @@
  **/
 
 
-#include "uart_lib.h"
+#include "uart_init.h"
 
 extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart5;
@@ -17,59 +17,70 @@ extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
 extern UART_HandleTypeDef huart6;
 
+/*
+
 extern uint8_t buf_1_pack_len, buf_2_pack_len, buf_3_pack_len, buf_4_pack_len, buf_5_pack_len, buf_6_pack_len;
 
-extern uint8_t buf_1 [1840];
-extern uint8_t buf_2 [1840];
-extern uint8_t buf_3 [1840];
-extern uint8_t buf_4 [1840];
-extern uint8_t buf_5 [1840];
-extern uint8_t buf_6 [1840];
+extern uint8_t buf_1 [SIZE_PING_PONG_BUFFER * 2];
+extern uint8_t buf_2 [SIZE_PING_PONG_BUFFER * 2];
+extern uint8_t buf_3 [SIZE_PING_PONG_BUFFER * 2];
+extern uint8_t buf_4 [SIZE_PING_PONG_BUFFER * 2];
+extern uint8_t buf_5 [SIZE_PING_PONG_BUFFER * 2];
+extern uint8_t buf_6 [SIZE_PING_PONG_BUFFER * 2];
+
+
+
+extern uint8_t BT1_RX_Buffer [100];
+uint8_t reading_frame_1 = 0;
+uint8_t len_1;
+
 
 extern uint8_t val;
 
-extern uint8_t send_1;
-extern uint8_t send_2;
+extern uint8_t busy_uart4;
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *haurt){
-	if(haurt->Instance == USART1){
-		while(1);
-	}
-	if(haurt->Instance == USART2){
-		while(1);
-	}
-	if(haurt->Instance == USART3){
+extern uint8_t send_1, send_2, send_3, send_4, send_5, send_6;
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
+	if(huart->Instance == USART1){
 		//while(1);
 	}
-	if(haurt->Instance == USART6){
+	if(huart->Instance == USART2){
 		//while(1);
 	}
-	if(haurt->Instance == UART4){
+	if(huart->Instance == USART3){
 		//while(1);
 	}
-	if(haurt->Instance == UART5){
+	if(huart->Instance == USART6){
 		//while(1);
 	}
-	if(haurt->Instance == UART7){
-		while(1);
+	if(huart->Instance == UART4){
+		busy_uart4 = 0;
+		//while(1);
 	}
-	if(haurt->Instance == UART8){
-		while(1);
+	if(huart->Instance == UART5){
+		//while(1);
+	}
+	if(huart->Instance == UART7){
+		//while(1);
+	}
+	if(huart->Instance == UART8){
+		//while(1);
 	}
 }
 
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *haurt){
-	if(haurt->Instance == USART1){
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
+	if(huart->Instance == USART1){
 		while(1);
 	}
-	if(haurt->Instance == USART2){
+	if(huart->Instance == USART2){
 		while(1);
 	}
-	if(haurt->Instance == USART3){
+	if(huart->Instance == USART3){
 		while(1);
 	}
-	if(haurt->Instance == USART6){
+	if(huart->Instance == USART6){
 		if(buf_2_pack_len < NUMBER_OF_BT_PACKETS)				buf_2_pack_len++;
 		else 																						buf_2_pack_len = 0;
 		
@@ -79,17 +90,55 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *haurt){
 		HAL_UART_Receive_IT(&huart6, &(buf_2[buf_2_pack_len * SIZE_BT_PACKET]), SIZE_BT_PACKET);
 		
 	}
-	if(haurt->Instance == UART4){
-		if(buf_1_pack_len < NUMBER_OF_BT_PACKETS)				buf_1_pack_len++;
-		else 																						buf_1_pack_len = 0;
+	if(huart->Instance == UART4){
+		//serPrintln(&huart5, "INT");
+		char string [10];
+		sprintf(string, "%d\n", reading_frame_1); 
+		HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
 		
-		if(buf_1_pack_len == NUMBER_OF_BT_PACKETS) 			send_1 = 1;
-		if(buf_1_pack_len == 0) 												send_1 = 2;
+		if(reading_frame_1 == 0){
+			if(BT1_RX_Buffer [0] == 0x02){
+				reading_frame_1 = 1;
+				HAL_UART_Receive_IT(&huart4, &(BT1_RX_Buffer [1]), 3);	//	Read the following 3 bytes
+			}
+			else{
+				HAL_UART_Receive_IT(&huart4, &(BT1_RX_Buffer [0]), 1);
+			}
+		}
+		else if(reading_frame_1 == 1){
+			reading_frame_1 = 2;
+			len_1 = BT1_RX_Buffer [2] + 1;
+			HAL_UART_Receive_IT(&huart4, &(BT1_RX_Buffer [4]), len_1);
+			
+			// Hier moet er iets mee gebeuren
+			//	HAL_UART_Transmit(&huart5, BT1_RX_Buffer, len_1, 10);
+		}
+		//else if(BT1_RX_Buffer [0] == 0x02 && reading_frame_1 == 0){
+		//	reading_frame_1 = 1;
+		//	HAL_UART_Receive_IT(&huart4, &(BT1_RX_Buffer [1]), 3);	//	Read the following 3 bytes
+		//}
+		else if(reading_frame_1 == 2){
+			reading_frame_1 = 0;
+			//HAL_UART_Transmit(&huart5, BT1_RX_Buffer, len_1, 10);
+			BT1_RX_Buffer [0] = 0;
+			HAL_UART_Receive_IT(&huart4, &(BT1_RX_Buffer [0]), 1);
+		}
+		else{
+			//HAL_UART_Receive_IT(&huart4, BT1_RX_Buffer, 1);
+		}
 		
-		HAL_UART_Receive_IT(&huart4, &(buf_1[buf_1_pack_len * SIZE_BT_PACKET]), SIZE_BT_PACKET);
+		
+		
+		//if(buf_1_pack_len < NUMBER_OF_BT_PACKETS)				buf_1_pack_len++;
+		//else 																						buf_1_pack_len = 0;
+		
+		//if(buf_1_pack_len == NUMBER_OF_BT_PACKETS) 			send_1 = 1;
+		//if(buf_1_pack_len == 0) 												send_1 = 2;
+		
+		//HAL_UART_Receive_IT(&huart4, &(buf_1[buf_1_pack_len * SIZE_BT_PACKET]), SIZE_BT_PACKET);
 		
 	}
-	if(haurt->Instance == UART5){
+	if(huart->Instance == UART5){
 		char string [5];
 		sprintf(string, "UART5\n"); 
 		HAL_UART_Transmit_IT(&huart5, (uint8_t *)string, 5);
@@ -98,13 +147,24 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *haurt){
 		HAL_UART_Receive_IT(&huart5, bbb, 2);
 		
 	}
-	if(haurt->Instance == UART7){
-		while(1);
+	if(huart->Instance == UART7){
+		if(buf_3_pack_len < NUMBER_OF_BT_PACKETS)				buf_3_pack_len++;
+		else 																						buf_3_pack_len = 0;
+		
+		if(buf_3_pack_len == NUMBER_OF_BT_PACKETS) 			send_3 = 1;
+		if(buf_3_pack_len == 0) 												send_3 = 2;
+		
+		HAL_UART_Receive_IT(&huart7, &(buf_3[buf_3_pack_len * SIZE_BT_PACKET]), SIZE_BT_PACKET);
 	}
-	if(haurt->Instance == UART8){
+	if(huart->Instance == UART8){
 		while(1);
 	}
 }
+
+*/
+
+
+
 
 
 /**
@@ -492,57 +552,4 @@ void MX_USART6_UART_Init(uint32_t baudrate)
 }
 
 
-
-void printBuf(UART_HandleTypeDef *haurt, uint8_t *buf, uint8_t len){
-	
-	char string [100];
-	
-	for(int i = 0; i < len; i++){
-		sprintf(&(string[5*i]), "0x%X  ", (uint8_t)*(buf + i));
-	}
-	sprintf(&(string[5*len]), "\n");
-	HAL_UART_Transmit(haurt, (uint8_t *)string, 5*len + 1, 100);
-	
-}
-	
-
-
-
-
-void serPrint(UART_HandleTypeDef *haurt, const char* str) {
-    int i = 0;
-    for(i = 0; str[i]!='\0' ; i++) { }
-		uint8_t buffer [i];
-		for(int j = 0; j < i; j++){
-			buffer [j] = (uint8_t)*(str + j);
-		}
-		HAL_UART_Transmit(haurt, buffer, i, 100);
-}
-
-
-void serPrintln(UART_HandleTypeDef *haurt, const char* str) {
-    int i = 0;
-    for(i = 0; str[i]!='\0' ; i++) {}
-		uint8_t buffer [i+1];
-		for(int j = 0; j < i; j++){
-			buffer [j] = (uint8_t)*(str + j);
-		}
-		buffer[i] = 0x0A;
-		HAL_UART_Transmit(haurt, buffer, i+1, 100);
-}
-
-
-
-
-void serPrintHex(UART_HandleTypeDef *haurt, uint8_t *buf, uint8_t len){
-
-	char output[(len * 2) + 1];
-	char *ptr = &output[0];
-	int i;
-	for (i = 0; i < len; i++)
-	{
-			ptr += sprintf(ptr, "%02X", buf[i]);
-	}
-	serPrintln(haurt, output);
-}
 

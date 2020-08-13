@@ -5,12 +5,13 @@
 	******************************************************************************
  **/
 
-#ifndef UART_LIB_H
-#define UART_LIB_H
+#ifndef UART_INIT_H
+#define UART_INIT_H
 
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "UartRingBufferManager.h"
 
 #ifdef __cplusplus
  extern "C" {
@@ -18,7 +19,6 @@
 
 #include "stm32h7xx_hal.h"
 #include "def.h"
-
 
 void  MX_UART4_Init(uint32_t baudrate);
 void  MX_UART5_Init(uint32_t baudrate);
@@ -28,14 +28,6 @@ void  MX_USART1_UART_Init(uint32_t baudrate);
 void  MX_USART2_UART_Init(uint32_t baudrate);
 void  MX_USART3_UART_Init(uint32_t baudrate);
 void  MX_USART6_UART_Init(uint32_t baudrate);
-
-
-void printBuf(UART_HandleTypeDef *haurt, uint8_t *buf, uint8_t len);
-
-void serPrint(UART_HandleTypeDef *haurt, const char* str);
-void serPrintln(UART_HandleTypeDef *haurt, const char* str);
-void serPrintHex(UART_HandleTypeDef *haurt, uint8_t *buf, uint8_t len);
-
 
 
 #ifdef __cplusplus

@@ -185,6 +185,7 @@
             <uocXRam>0</uocXRam>
             <RvdsVP>3</RvdsVP>
             <RvdsMve>0</RvdsMve>
+            <RvdsCdeCp>0</RvdsCdeCp>
             <hadIRAM2>1</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
@@ -351,7 +352,7 @@
             <NoWarn>0</NoWarn>
             <uSurpInc>0</uSurpInc>
             <useXO>0</useXO>
-            <uClangAs>0</uClangAs>
+            <ClangAsOpt>4</ClangAsOpt>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -398,21 +399,6 @@
               <FilePath>..\Src\config.c</FilePath>
             </File>
             <File>
-              <FileName>uart_lib.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\uart_lib.c</FilePath>
-            </File>
-            <File>
-              <FileName>ble_lib.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\ble_lib.c</FilePath>
-            </File>
-            <File>
-              <FileName>ble.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Src\ble.c</FilePath>
-            </File>
-            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Src/main.c</FilePath>
@@ -446,6 +432,41 @@
               <FileName>stm32h7xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Src/stm32h7xx_hal_msp.c</FilePath>
+            </File>
+            <File>
+              <FileName>UartRingbuffer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\UartRingbuffer.c</FilePath>
+            </File>
+            <File>
+              <FileName>UartRingbufferManager.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\UartRingbufferManager.c</FilePath>
+            </File>
+            <File>
+              <FileName>usb_com.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\usb_com.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart_init.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\uart_init.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart_com.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\uart_com.c</FilePath>
+            </File>
+            <File>
+              <FileName>imu_com.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\imu_com.c</FilePath>
+            </File>
+            <File>
+              <FileName>proteusII_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Src\proteusII_driver.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -628,5 +649,20 @@
     </components>
     <files/>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>&lt;Project Info&gt;</LayName>
+        <LayDesc></LayDesc>
+        <LayUrl></LayUrl>
+        <LayKeys></LayKeys>
+        <LayCat></LayCat>
+        <LayLic></LayLic>
+        <LayTarg>0</LayTarg>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>

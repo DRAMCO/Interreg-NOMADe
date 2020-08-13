@@ -3,6 +3,7 @@ mainboard\uart_lib.o: ../Inc/uart_lib.h
 mainboard\uart_lib.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
 mainboard\uart_lib.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 mainboard\uart_lib.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+mainboard\uart_lib.o: ../Inc/UartRingBufferManager.h
 mainboard\uart_lib.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h
 mainboard\uart_lib.o: ../Inc/stm32h7xx_hal_conf.h
 mainboard\uart_lib.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h
@@ -42,4 +43,5 @@ mainboard\uart_lib.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim.h
 mainboard\uart_lib.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h
 mainboard\uart_lib.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h
 mainboard\uart_lib.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h
+mainboard\uart_lib.o: ../Inc/UartRingbuffer.h
 mainboard\uart_lib.o: ../Inc/def.h

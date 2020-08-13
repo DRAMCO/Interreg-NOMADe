@@ -52,6 +52,7 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+extern void UART_ISR_Manager(UART_HandleTypeDef *huart);
 
 /* USER CODE END 0 */
 
@@ -341,8 +342,10 @@ void UART4_IRQHandler(void)
   /* USER CODE BEGIN UART4_IRQn 0 */
 
   /* USER CODE END UART4_IRQn 0 */
-  HAL_UART_IRQHandler(&huart4);
+  //HAL_UART_IRQHandler(&huart4);
   /* USER CODE BEGIN UART4_IRQn 1 */
+	
+	UART_ISR_Manager(&huart4);
 
   /* USER CODE END UART4_IRQn 1 */
 }
@@ -355,9 +358,11 @@ void UART5_IRQHandler(void)
   /* USER CODE BEGIN UART5_IRQn 0 */
 
   /* USER CODE END UART5_IRQn 0 */
-  HAL_UART_IRQHandler(&huart5);
+  //HAL_UART_IRQHandler(&huart5);
   /* USER CODE BEGIN UART5_IRQn 1 */
 
+	UART_ISR_Manager(&huart5);
+	
   /* USER CODE END UART5_IRQn 1 */
 }
 

@@ -41,6 +41,12 @@ mainboard\ble.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim.h
 mainboard\ble.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h
 mainboard\ble.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h
 mainboard\ble.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h
-mainboard\ble.o: ../Inc/uart_lib.h
+mainboard\ble.o: ../Inc/uart_init.h
 mainboard\ble.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+mainboard\ble.o: ../Inc/UartRingBufferManager.h
+mainboard\ble.o: ../Inc/UartRingbuffer.h
 mainboard\ble.o: ../Inc/def.h
+mainboard\ble.o: ../Inc/uart_com.h
+mainboard\ble.o: ../Inc/usb_com.h
+mainboard\ble.o: ../Inc/imu_com.h
+mainboard\ble.o: ../Inc/ble.h

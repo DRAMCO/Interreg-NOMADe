@@ -53,8 +53,13 @@ mainboard\main.o: ../Inc/sd_diskio.h
 mainboard\main.o: ../Inc/config.h
 mainboard\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
 mainboard\main.o: ../Inc/def.h
-mainboard\main.o: ../Inc/uart_lib.h
+mainboard\main.o: ../Inc/uart_init.h
 mainboard\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
+mainboard\main.o: ../Inc/UartRingBufferManager.h
+mainboard\main.o: ../Inc/UartRingbuffer.h
 mainboard\main.o: ../Inc/def.h
-mainboard\main.o: ../Inc/ble.h
-mainboard\main.o: ../Inc/ble_lib.h
+mainboard\main.o: ../Inc/usb_com.h
+mainboard\main.o: ../Inc/imu_com.h
+mainboard\main.o: ../Inc/proteusII_driver.h
+mainboard\main.o: ../Inc/uart_com.h
+mainboard\main.o: ../Inc/usb_com.h

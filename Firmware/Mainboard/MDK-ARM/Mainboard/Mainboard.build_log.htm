@@ -3,60 +3,67 @@
 <pre>
 <h1>µVision Build Log</h1>
 <h2>Tool Versions:</h2>
-IDE-Version: µVision V5.29.0.0
-Copyright (C) 2019 ARM Ltd and ARM Germany GmbH. All rights reserved.
-License Information: Jarne Van Mulders KU Leuven Flex license: MDK Professional 5.29 (Flex): 30 user(s) (mdk_pro) Operation stops: 11 Jul 2020
+IDE-Version: µVision V5.31.0.0
+Copyright (C) 2020 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: Jarne Van Mulders, KU Leuven, LIC=UB4HL-JBXMU-22F7I-BU9DP-UGX93-RU7MT
  
 Tool Versions:
-Toolchain:       MDK Professional 5.29 (Flex): 30 user(s)  Version: 5.29.0.0
+Toolchain:       MDK-ARM Professional  Version: 5.31.0.0
 Toolchain Path:  C:\Keil_v5\ARM\ARMCC\Bin
 C Compiler:      Armcc.exe V5.06 update 6 (build 750)
 Assembler:       Armasm.exe V5.06 update 6 (build 750)
 Linker/Locator:  ArmLink.exe V5.06 update 6 (build 750)
 Library Manager: ArmAr.exe V5.06 update 6 (build 750)
 Hex Converter:   FromElf.exe V5.06 update 6 (build 750)
-CPU DLL:         SARMCM3.DLL V5.29.0.0
+CPU DLL:         SARMCM3.DLL V5.31.0.0
 Dialog DLL:      DCM.DLL V1.17.3.0
 Target DLL:      STLink\ST-LINKIII-KEIL_SWO.dll V3.0.7.0
-Dialog DLL:      TCM.DLL V1.36.5.0
+Dialog DLL:      TCM.DLL V1.46.0.0
  
 <h2>Project:</h2>
 C:\Users\jarne\Documents\GitHub\Interreg-NOMADe\Firmware\Mainboard\MDK-ARM\Mainboard.uvprojx
-Project File Date:  05/14/2020
+Project File Date:  08/13/2020
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 6 (build 750)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Mainboard'
+compiling UartRingbuffer.c...
+..\Src\UartRingbuffer.c(68): warning:  #68-D: integer conversion resulted in a change of sign
+      return -1;
+..\Src\UartRingbuffer.c: 1 warning, 0 errors
+compiling uart_init.c...
+compiling usb_com.c...
+compiling UartRingbufferManager.c...
 compiling main.c...
-../Src/main.c(101): warning:  #1295-D: Deprecated declaration SDCard_create_new_file - give arg types
-  static void SDCard_create_new_file();
-../Src/main.c(102): warning:  #1295-D: Deprecated declaration SDCard_mount - give arg types
-  static FRESULT SDCard_mount();
-../Src/main.c(110): warning:  #1295-D: Deprecated declaration printSystemTick - give arg types
-  static void printSystemTick();
-../Src/main.c(696): warning:  #188-D: enumerated type mixed with another type
-    HAL_GPIO_WritePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin, 1);
-../Src/main.c(703): warning:  #188-D: enumerated type mixed with another type
-    HAL_GPIO_WritePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin, 0);
-../Src/main.c(715): warning:  #188-D: enumerated type mixed with another type
-  	HAL_GPIO_WritePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin, 0);
-../Src/main.c(744): warning:  #177-D: function "IOExpander_clear"  was declared but never referenced
+../Src/main.c(1047): warning:  #177-D: function "IOExpander_clear"  was declared but never referenced
   void IOExpander_clear(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io){
-../Src/main.c(385): warning:  #177-D: function "printSystemTick"  was declared but never referenced
-  void printSystemTick(){
-../Src/main.c: 8 warnings, 0 errors
+../Src/main.c(687): warning:  #177-D: function "printSystemTick"  was declared but never referenced
+  void printSystemTick(void){
+../Src/main.c: 2 warnings, 0 errors
+compiling uart_com.c...
+compiling imu_com.c...
+compiling proteusII_driver.c...
+..\Src\proteusII_driver.c(89): warning:  #940-D: missing return statement at end of non-void function "BT_getUARTBaudrate" 
+  }
+..\Src\proteusII_driver.c(94): warning:  #940-D: missing return statement at end of non-void function "BT_setUARTBaudrate" 
+  }
+..\Src\proteusII_driver.c(166): warning:  #111-D: statement is unreachable
+              break;
+..\Src\proteusII_driver.c(203): warning:  #940-D: missing return statement at end of non-void function "BT_receiveFrame" 
+  }
+..\Src\proteusII_driver.c: 4 warnings, 0 errors
 linking...
-Program Size: Code=42344 RO-data=1148 RW-data=104 ZI-data=27496  
+Program Size: Code=40496 RO-data=1400 RW-data=84 ZI-data=35468  
 FromELF: creating hex file...
-"Mainboard\Mainboard.axf" - 0 Error(s), 8 Warning(s).
+"Mainboard\Mainboard.axf" - 0 Error(s), 7 Warning(s).
 
 <h2>Software Packages used:</h2>
 
 Package Vendor: ARM
-                http://www.keil.com/pack/ARM.CMSIS.5.6.0.pack
-                ARM.CMSIS.5.6.0
+                http://www.keil.com/pack/ARM.CMSIS.5.7.0.pack
+                ARM.CMSIS.5.7.0
                 CMSIS (Cortex Microcontroller Software Interface Standard)
-   * Component: CORE Version: 5.3.0
+   * Component: CORE Version: 5.4.0
 
 Package Vendor: Keil
                 https://www.keil.com/pack/Keil.STM32H7xx_DFP.2.3.1.pack
@@ -65,13 +72,13 @@ Package Vendor: Keil
 
 <h2>Collection of Component include folders:</h2>
   .\RTE\_Mainboard
-  C:\Users\jarne\AppData\Local\Arm\Packs\ARM\CMSIS\5.6.0\CMSIS\Core\Include
+  C:\Users\jarne\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include
   C:\Users\jarne\AppData\Local\Arm\Packs\Keil\STM32H7xx_DFP\2.3.1\Drivers\CMSIS\Device\ST\STM32H7xx\Include
 
 <h2>Collection of Component Files used:</h2>
 
-   * Component: ARM::CMSIS:CORE:5.3.0
-Build Time Elapsed:  00:00:06
+   * Component: ARM::CMSIS:CORE:5.4.0
+Build Time Elapsed:  00:00:21
 </pre>
 </body>
 </html>
