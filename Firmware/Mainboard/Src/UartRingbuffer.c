@@ -91,7 +91,7 @@ void RB_Uart_write(UART_HandleTypeDef *huart, ring_buffer *_tx_buffer, int c){
 	}
 }
 
-uint8_t RB_IsDataAvailable(ring_buffer *_rx_buffer){
+uint16_t RB_IsDataAvailable(ring_buffer *_rx_buffer){
   return (uint16_t)(UART_BUFFER_SIZE + _rx_buffer->head - _rx_buffer->tail) % UART_BUFFER_SIZE;
 }
 

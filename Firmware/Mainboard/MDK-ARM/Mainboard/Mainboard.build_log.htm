@@ -5,10 +5,10 @@
 <h2>Tool Versions:</h2>
 IDE-Version: µVision V5.31.0.0
 Copyright (C) 2020 ARM Ltd and ARM Germany GmbH. All rights reserved.
-License Information: Jarne Van Mulders, KU Leuven, LIC=UB4HL-JBXMU-22F7I-BU9DP-UGX93-RU7MT
+License Information: Jarne Van Mulders KU Leuven Flex license: MDK Professional 5.31 (Flex): 40 user(s) (mdk_pro) Operation stops: 22 Jul 2021
  
 Tool Versions:
-Toolchain:       MDK-ARM Professional  Version: 5.31.0.0
+Toolchain:       MDK Professional 5.31 (Flex): 40 user(s)  Version: 5.31.0.0
 Toolchain Path:  C:\Keil_v5\ARM\ARMCC\Bin
 C Compiler:      Armcc.exe V5.06 update 6 (build 750)
 Assembler:       Armasm.exe V5.06 update 6 (build 750)
@@ -22,40 +22,16 @@ Dialog DLL:      TCM.DLL V1.46.0.0
  
 <h2>Project:</h2>
 C:\Users\jarne\Documents\GitHub\Interreg-NOMADe\Firmware\Mainboard\MDK-ARM\Mainboard.uvprojx
-Project File Date:  08/13/2020
+Project File Date:  08/20/2020
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 6 (build 750)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Mainboard'
-compiling UartRingbuffer.c...
-..\Src\UartRingbuffer.c(68): warning:  #68-D: integer conversion resulted in a change of sign
-      return -1;
-..\Src\UartRingbuffer.c: 1 warning, 0 errors
-compiling uart_init.c...
-compiling usb_com.c...
-compiling UartRingbufferManager.c...
-compiling main.c...
-../Src/main.c(1047): warning:  #177-D: function "IOExpander_clear"  was declared but never referenced
-  void IOExpander_clear(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io){
-../Src/main.c(687): warning:  #177-D: function "printSystemTick"  was declared but never referenced
-  void printSystemTick(void){
-../Src/main.c: 2 warnings, 0 errors
-compiling uart_com.c...
-compiling imu_com.c...
-compiling proteusII_driver.c...
-..\Src\proteusII_driver.c(89): warning:  #940-D: missing return statement at end of non-void function "BT_getUARTBaudrate" 
-  }
-..\Src\proteusII_driver.c(94): warning:  #940-D: missing return statement at end of non-void function "BT_setUARTBaudrate" 
-  }
-..\Src\proteusII_driver.c(166): warning:  #111-D: statement is unreachable
-              break;
-..\Src\proteusII_driver.c(203): warning:  #940-D: missing return statement at end of non-void function "BT_receiveFrame" 
-  }
-..\Src\proteusII_driver.c: 4 warnings, 0 errors
+compiling sd_card_com.c...
 linking...
-Program Size: Code=40496 RO-data=1400 RW-data=84 ZI-data=35468  
+Program Size: Code=41508 RO-data=1692 RW-data=240 ZI-data=60080  
 FromELF: creating hex file...
-"Mainboard\Mainboard.axf" - 0 Error(s), 7 Warning(s).
+"Mainboard\Mainboard.axf" - 0 Error(s), 0 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -66,19 +42,19 @@ Package Vendor: ARM
    * Component: CORE Version: 5.4.0
 
 Package Vendor: Keil
-                https://www.keil.com/pack/Keil.STM32H7xx_DFP.2.3.1.pack
-                Keil.STM32H7xx_DFP.2.3.1
+                http://www.keil.com/pack/Keil.STM32H7xx_DFP.2.5.0.pack
+                Keil.STM32H7xx_DFP.2.5.0
                 STMicroelectronics STM32H7 Series Device Support and Examples
 
 <h2>Collection of Component include folders:</h2>
   .\RTE\_Mainboard
   C:\Users\jarne\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include
-  C:\Users\jarne\AppData\Local\Arm\Packs\Keil\STM32H7xx_DFP\2.3.1\Drivers\CMSIS\Device\ST\STM32H7xx\Include
+  C:\Users\jarne\AppData\Local\Arm\Packs\Keil\STM32H7xx_DFP\2.5.0\Drivers\CMSIS\Device\ST\STM32H7xx\Include
 
 <h2>Collection of Component Files used:</h2>
 
    * Component: ARM::CMSIS:CORE:5.4.0
-Build Time Elapsed:  00:00:21
+Build Time Elapsed:  00:00:18
 </pre>
 </body>
 </html>

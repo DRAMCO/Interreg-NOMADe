@@ -50,3 +50,16 @@ mainboard\imu_com.o: ../Inc/def.h
 mainboard\imu_com.o: ../Inc/uart_com.h
 mainboard\imu_com.o: ../Inc/usb_com.h
 mainboard\imu_com.o: ../Inc/imu_com.h
+mainboard\imu_com.o: ../Inc/sd_card_com.h
+mainboard\imu_com.o: ../Inc/fatfs.h
+mainboard\imu_com.o: ../Middlewares/Third_Party/FatFs/src/ff.h
+mainboard\imu_com.o: ../Middlewares/Third_Party/FatFs/src/integer.h
+mainboard\imu_com.o: ../Inc/ffconf.h
+mainboard\imu_com.o: ../Inc/main.h
+mainboard\imu_com.o: ../Inc/bsp_driver_sd.h
+mainboard\imu_com.o: ../Inc/fatfs_platform.h
+mainboard\imu_com.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+mainboard\imu_com.o: ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h
+mainboard\imu_com.o: ../Middlewares/Third_Party/FatFs/src/diskio.h
+mainboard\imu_com.o: ../Inc/sd_diskio.h
+mainboard\imu_com.o: ../Inc/usb_com.h

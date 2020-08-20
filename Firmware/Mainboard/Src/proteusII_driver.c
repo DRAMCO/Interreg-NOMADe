@@ -86,11 +86,13 @@ void BT_updateBaudrate(UART_HandleTypeDef *huart, uint8_t baudrate_index){
 
 uint8_t BT_getUARTBaudrate(UART_HandleTypeDef *huart){
   BT_transmit_CMD_Byte(huart, CMD_GET_REQ, UART_BaudrateIndex);
+	return 0;
 }
 
 uint8_t BT_setUARTBaudrate(UART_HandleTypeDef *huart, uint8_t baudrate_index){
 	uint8_t data [] = {UART_BaudrateIndex, baudrate_index};
   BT_transmit_CMD_Bytes(huart, CMD_SET_REQ, 2, data);
+	return 0;
 }
 
 // ================================================================
@@ -157,7 +159,7 @@ void BT_transmit_CMD(UART_HandleTypeDef *huart, uint8_t cmd){
 // ================================================================
 // ===              Receive BT module messages                  ===
 // ================================================================
-
+/*
 uint8_t BT_receiveFrame_TimeOut(uint8_t * rsvbuf, uint16_t timeout){
     uint32_t begin_time = HAL_GetTick();
     while(!BT_receiveFrame(rsvbuf)){
@@ -171,7 +173,7 @@ uint8_t BT_receiveFrame_TimeOut(uint8_t * rsvbuf, uint16_t timeout){
 
 uint8_t BT_receiveFrame(uint8_t * rsvbuf){
 	
-	/*
+	
     if(Serial.available() > 0){
         if(Serial.read() == 0x02){
             *(rsvbuf + 0) = 0x02;
@@ -199,9 +201,9 @@ uint8_t BT_receiveFrame(uint8_t * rsvbuf){
         }
     }   
     return 0;
-		*/
+		
 }
-
+*/
 
 // ================================================================
 // ===                      UART functions                      ===

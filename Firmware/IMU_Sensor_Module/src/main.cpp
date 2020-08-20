@@ -13,7 +13,7 @@
  *         File: main.cpp
  *      Created: 2020-02-27
  *       Author: Jarne Van Mulders
- *      Version: V1.0
+ *      Version: V2.1
  *
  *  Description: Firmware IMU sensor module for the NOMADe project
  *
@@ -29,6 +29,7 @@
 #include "Config.h"
 #include "BMS.h"
 #include "Bluetooth.h"
+#include "BTCom.h"
 
 
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -59,32 +60,40 @@
 MPU6050 mpu;
 BMS bms;
 BLUETOOTH bt;
+BTCOM btcom(&bt, &bms, &mpu);
 
 // ================================================================
 // ===                      State Machine                       ===
 // ================================================================
 
-enum Sensor_Reader_State{SLEEP, CALIBRATION, IDLE, SYNC, RUNNING, CHARGING, BATTERY_LOW};
 uint8_t state = SLEEP;
+
+// ================================================================
+// ===                    Global booleans                       ===
+// ================================================================
 
 bool calibration = 0;
 bool status_periferals = 1;
 bool sync_now = 0;
+bool sync_executed = 0;
+bool battery_low_state = 0;
+bool interruptIMU = false;
 
 // ================================================================
 // ===              Global buffers and variables                ===
 // ================================================================
 
-//bool dmpReady = false;              //  Set true if DMP init was successful
-bool interruptIMU = false;
-uint8_t mpuIntStatus;               //  Holds actual interrupt status byte from MPU
+//bool dmpReady = false;            //  Set true if DMP init was successful
+//uint8_t mpuIntStatus;               //  Holds actual interrupt status byte from MPU
 
 uint8_t buffer_counter = 0;         //  Global variable (number of sensor read outs before sending)
 uint8_t packet_number_counter = 1;  //  Send packet after counter is same as PACK_NRS_BEFORE_SEND
-uint8_t data [8* MAX_BUFFER_SIZE];  //  Data buffer
 uint8_t mpu_read_counter = 0;
 uint8_t pack_nr_before_send = DEFAULT_PACK_NRS_BEFORE_SEND;
 
+uint32_t sync_time = 0;
+
+uint8_t data [8* MAX_BUFFER_SIZE + 1];  //  Data buffer
 uint8_t rsv_buffer [50];
 
 // ================================================================
@@ -100,13 +109,13 @@ static void processIMUData(void);
 static void shutdown_periferals();
 static void start_periferals();
 
-static void communication_management();
-static void rsv_msg_handler(uint8_t * command_msg);
+//static void communication_management();
+//static void rsv_msg_handler(uint8_t * command_msg);
 
 static void MPU_powerdown(void);
 static void MPU_powerup(void);
 static void MPU_calibrate(void);
-static void MPU_Start_DMP(void);
+//static void MPU_Start_DMP(void);
 
 static void Error_Handler(void);
 
@@ -178,6 +187,9 @@ void setup(){
     Serial.write(0x99);
     //delay(100);
 
+    bt.changeScanTiming();    // Niet Low Power !!!
+    bt.changeScanFactor();    // Niet Low Power !!!
+
 }
 
 // ================================================================
@@ -193,9 +205,9 @@ uint16_t num = 0;
 void loop(){
   
   // Eerst kijken of de batterij spanning voldoende is 
-  if(!bms.batStatus())    state = BATTERY_LOW;
+  if(!bms.batStatus())    { state = BATTERY_LOW;    battery_low_state = 1;  }
   // Vervolgens kijken of de batterij wordt geladen
-  if(bms.batCharging())   state = CHARGING;
+  if(bms.batCharging())   { state = CHARGING;       battery_low_state = 0;  }
 
 
   #ifdef PROBEERSEL
@@ -227,10 +239,11 @@ void loop(){
 
 
   #ifdef CHECK_FRAMES_EXCEPT_DURING_RUNNING_STATE
+
     if(status_periferals){
-      if(state != RUNNING && state != SYNC){
+      if(state != RUNNING && state != SYNC && state != IDLE){
         if(Serial.available()){
-          communication_management();
+          btcom.communication_management();
         }
       }
 
@@ -244,13 +257,22 @@ void loop(){
       // Alternatieve oplossing
       else{
         if(Serial.available() > 0){
-          if(Serial.read() == CMD_DATA_IND){
+          uint8_t byte = Serial.read();
+          if(byte == CMD_DATA_IND){
             uint8_t command;
             for(int i = 0; i < 10; i++){
               while(!(Serial.available() > 0));
               command = Serial.read();
             }
-            rsv_msg_handler(&command);
+            btcom.rsv_msg_handler(&command);
+          }
+          if(byte == CMD_BEACON_IND){
+            uint8_t command;
+            for(int i = 0; i < 10; i++){
+              while(!(Serial.available() > 0));
+              command = Serial.read();
+            }
+            btcom.rsv_msg_handler(&command);            
           }
         }
       }
@@ -259,7 +281,29 @@ void loop(){
 
     //---------------------------------------------------//
   #endif
-
+/*
+  if(status_periferals){
+    if(Serial.available() > 0){
+    uint8_t byte = Serial.read();
+    if(byte == CMD_DATA_IND){
+      uint8_t command;
+      for(int i = 0; i < 10; i++){
+        while(!(Serial.available() > 0));
+        command = Serial.read();
+      }
+      btcom.rsv_msg_handler(&command);
+    }
+    if(byte == CMD_BEACON_IND){
+      uint8_t command;
+      for(int i = 0; i < 10; i++){
+        while(!(Serial.available() > 0));
+        command = Serial.read();
+        }
+        btcom.rsv_msg_handler(&command);            
+      }
+    }
+  }
+*/
 
   switch(state){
     case SLEEP:{
@@ -272,20 +316,47 @@ void loop(){
 
       // Eerst nog snel batterij controleren?
 
-      if(!digitalRead(BUTTON_INT)) state = IDLE;
+      if(!digitalRead(BUTTON_INT)){
+        if(battery_low_state)   { state = SLEEP;  LED_blink(3, 100);  }
+        else                    { state = STARTUP;                       }
+      }
 
+    }
+    break;
+
+    case STARTUP:{
+      status_periferals = 1;
+      LED_blink(3, 100);
+      delay(10);
+      MPU_powerup();
+      delay(10);
+      Serial.flush();
+      bt.wakeup();
+      delay(10);
+      //catch_receive_msg();//7, 500);
+      //delay(10);
+      //bt.reset();
+      //Serial.flush();
+      //delay(100);
+      //Serial.flush();
+      attachInterrupt(digitalPinToInterrupt(BUTTON_INT), sleepISR, FALLING);
+      attachInterrupt(digitalPinToInterrupt(MPU_INT), dmpData, FALLING);
+      state = IDLE;
     }
     break;
     
     case IDLE:{
       // wachten op een start commando of een BT connectie
-      if(!status_periferals)  start_periferals();
+      //if(!status_periferals)  start_periferals();
       if(bt.isConnected())  {   
-        if(!calibration){
-          LED_blink(1, 50, 100); 
-        }
+        //if(!calibration){
+        //LED_blink(1, 50, 100); 
+        delay(10);
+        LED_blink(1, 50, 100);
+        //}
         //else delay(5); 
-        else state = SYNC;
+        //else 
+        //state = SYNC;
       }
       else{
         LED_blink(1, 200);
@@ -307,16 +378,39 @@ void loop(){
     }
     break;
 
+    /*
     case SYNC:{
       delay(5);
       if(sync_now){
         sync_now = 0;
-        MPU_Start_DMP();      /***    Start IMU DMP     ***/
+        MPU_Start_DMP();      //    Start IMU DMP
         state = RUNNING;
       }
     }
     break;
+    */
 
+    case SYNC:{
+      
+      //delay(5);   //  Is this delay NECESSARY???????
+      
+      if(sync_now){
+        sync_now = 0;
+
+        bt.disconnect();
+        delay(10);
+      
+        bt.startScanning();
+      }
+
+      //if(sync_executed && bt.isConnected()){
+      //    MPU_Start_DMP();      //    Start IMU DMP
+      //    state = RUNNING; 
+      //}
+    }
+    break;
+
+      //    Running zal moeten worden aangepast en wachten op een start measurements commando
     case RUNNING:{
       if(bt.isConnected()){
         if(interruptIMU){
@@ -354,170 +448,6 @@ void loop(){
   }
 }
 
-void communication_management(){
-  if(bt.receiveFrame(rsv_buffer)){
-    switch(rsv_buffer [1]){
-      case CMD_DATA_CNF:{
-        //  Data transmission request received
-      }
-      break;
-
-      case CMD_TXCOMPLETE_RSP:{
-        //  Data has been sent
-      }
-      break;
-
-      case CMD_GETSTATE_CNF:{
-        //  Current module state
-      }
-      break;
-
-      case CMD_CONNECT_IND:{
-        //  Connection established
-      }
-      break;
-
-      case CMD_CHANNELOPEN_RSP:{
-        //  Channel open, data transmission possible
-      }
-      break;
-
-      case CMD_DISCONNECT_CNF:{
-        //  Disconnection request received
-      }
-      break;
-      
-      case CMD_DISCONNECT_IND:{
-        //  Disconnected
-      }
-      break;
-
-      case CMD_SLEEP_CNF:{
-        //  Sleep request received
-      }
-      break;
-
-      case CMD_DATA_IND:{
-        //  Data has been received
-        rsv_msg_handler(&rsv_buffer[11]);
-      }
-      break;
-
-      default:
-        break;
-    }
-
-
-    //if(rsv_buffer [1] != 0)
-    //  Serial.write(rsv_buffer [1]);
-  }
-}
-
-
-void rsv_msg_handler(uint8_t * command_msg){
-  switch(*command_msg){
-
-    case IMU_SENSOR_MODULE_REQ_STATUS:{
-        //  Send module status
-      bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_STATUS, 1, &state);
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_BATTERY_VOLTAGE:{
-        //  Send battery voltage
-      float voltage = bms.getBatVoltage();
-      uint16_t value = (uint16_t)(voltage * 100);
-      uint8_t data [] = {IMU_SENSOR_MODULE_IND_BATTERY_VOLTAGE, (uint8_t)(value), (uint8_t)(value >> 8)};
-      bt.transmitData(3, data);
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_START_CALIBRATION:{
-      if(state == IDLE){
-        state = CALIBRATION;      /***    Start calibration     ***/
-      }
-      else{
-          //  Send msg, cannot calibrate!!
-        bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_CANNOT_CALIBRATE);
-      }
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_START_SYNC:{
-      // Start measurements
-      if(calibration){
-          //  Send msg, SYNC started
-        bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_SYNC_DONE);
-        sync_now = 1;
-      }
-      else{
-          //  Send msg, first need to callibrate.
-        bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_NEED_TO_CALIBRATE);
-      }
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_STOP_MEASUREMENTS:{
-      mpu.setDMPEnabled(0);
-      bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_MEASUREMENTS_STOPPED);
-      state = IDLE;
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_10HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 10;
-        //  Send msg, sampling frequency changed
-      bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_20HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 20;
-        //  Send msg, sampling frequency changed
-      bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_25HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 25;
-        //  Send msg, sampling frequency changed
-      bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_50HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 50;
-        //  Send msg, sampling frequency changed
-      bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_100HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 100;
-        //  Send msg, sampling frequency changed
-      bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
-    }
-    break;
-
-    case IMU_SENSOR_MODULE_REQ_GO_TO_SLEEP:{
-        //  Send msg, Module State is SLEEP
-      mpu.setDMPEnabled(0);
-      bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_SLEEP_MODE);
-      delay(200);
-      state = SLEEP;
-    }
-    break;
-
-    default:{
-      Serial.write(0xFF);
-    }
-    break;
-
-  }
-
-}
-
-
 
 // ================================================================
 // ===                  STATIC VOID FUNCTIONS                   ===
@@ -537,7 +467,7 @@ void processIMUData(void){
   uint8_t fifoBuffer[64];             //  FIFO storage buffer
   
   fifoCount = mpu.getFIFOCount();
-  mpuIntStatus = mpu.getIntStatus();
+  uint8_t mpuIntStatus = mpu.getIntStatus();
 	
     //  Check the number of bytes in the FIFO buffer 
   if (fifoCount > PACKETSIZE) Error_Handler();
@@ -564,18 +494,19 @@ void processIMUData(void){
 
     if(buffer_counter >= MAX_BUFFER_SIZE){
       buffer_counter = 0;
-      bt.transmitData(8 * MAX_BUFFER_SIZE, data);
+      bt.transmitData((8 * MAX_BUFFER_SIZE + 1), data);
       //digitalWrite(IND_LED, HIGH);
     }
     
-    data [0 + 8*buffer_counter] = fifoBuffer[0];
-    data [1 + 8*buffer_counter] = fifoBuffer[1];
-    data [2 + 8*buffer_counter] = fifoBuffer[4];
-    data [3 + 8*buffer_counter] = fifoBuffer[5];
-    data [4 + 8*buffer_counter] = fifoBuffer[8];
-    data [5 + 8*buffer_counter] = fifoBuffer[9];
-    data [6 + 8*buffer_counter] = fifoBuffer[12];
-    data [7 + 8*buffer_counter] = fifoBuffer[13];
+    data [0] = IMU_SENSOR_MODULE_REQ_SEND_DATA;
+    data [1 + 8*buffer_counter] = fifoBuffer[0];
+    data [2 + 8*buffer_counter] = fifoBuffer[1];
+    data [3 + 8*buffer_counter] = fifoBuffer[4];
+    data [4 + 8*buffer_counter] = fifoBuffer[5];
+    data [5 + 8*buffer_counter] = fifoBuffer[8];
+    data [6 + 8*buffer_counter] = fifoBuffer[9];
+    data [7 + 8*buffer_counter] = fifoBuffer[12];
+    data [8 + 8*buffer_counter] = fifoBuffer[13];
     
     packet_number_counter = 1;
     buffer_counter++;
@@ -591,6 +522,7 @@ void LED_blink(uint8_t num, uint16_t wait_time){
   }
 }
 
+/*
 void LED_blink(uint8_t num, uint16_t on_time, uint16_t off_time){
   for(int i = 0; i < num; i++){
     digitalWrite(IND_LED, HIGH);
@@ -599,6 +531,30 @@ void LED_blink(uint8_t num, uint16_t on_time, uint16_t off_time){
     delay(off_time);
   }
 }
+*/
+
+uint8_t on_counter = 0;
+uint8_t off_counter = 0;
+
+void LED_blink(uint8_t num, uint16_t on_time, uint16_t off_time){
+  if(!digitalRead(IND_LED)){
+    off_counter++;
+    if(off_counter == off_time/10){
+      digitalWrite(IND_LED, HIGH);
+      off_counter = 0;
+    }
+  }
+  else{
+    on_counter++;
+    if(on_counter == on_time/10){
+      digitalWrite(IND_LED, LOW);
+      on_counter = 0;
+    }
+  }
+}
+
+
+
 
 void LED_blink_Running(){
   mpu_read_counter++;
@@ -622,9 +578,11 @@ void IND_LED_Off(void){
 
 void shutdown_periferals(void){
   calibration = 0;
+  sync_executed = 0;
   status_periferals = 0;
   mpu_read_counter = 0;
   buffer_counter = 0;
+  bt.stopScanning(); // If there goes something wrong with the synchronisation or a reset of the bt module could also help
   MPU_powerdown();
   if(bt.isConnected()){
     bt.disconnect();
@@ -636,13 +594,14 @@ void shutdown_periferals(void){
 
   delay(10);
   
-  for(uint8_t i = 0; i < 5; i++)  communication_management();
+  for(uint8_t i = 0; i < 5; i++)  btcom.communication_management();
 
   delay(10);
   Serial.flush();
   LED_blink(2, 200);
 }
 
+/*
 void start_periferals(void){
   status_periferals = 1;
   LED_blink(3, 100);
@@ -661,7 +620,7 @@ void start_periferals(void){
   attachInterrupt(digitalPinToInterrupt(BUTTON_INT), sleepISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(MPU_INT), dmpData, FALLING);
 }
-
+*/
 
 // ================================================================
 // ===                        MPU6050                           ===
@@ -758,10 +717,10 @@ void MPU_calibrate(void){
 }
 
 
-void MPU_Start_DMP(void){
-  mpu.setDMPEnabled(true);
-  mpuIntStatus = mpu.getIntStatus();
-}
+//void MPU_Start_DMP(void){
+  //mpu.setDMPEnabled(true);
+  //mpuIntStatus = mpu.getIntStatus();
+//}
 
 void MPU_powerdown(void){
   digitalWrite(MPU_ON, LOW);
@@ -769,6 +728,10 @@ void MPU_powerdown(void){
 
 void MPU_powerup(void){
   digitalWrite(MPU_ON, HIGH);
+  #ifdef MPU_EXTERNAL_CLOCK
+    delay(10);
+    mpu.setClockSource(MPU6050_CLOCK_PLL_EXT19M);
+  #endif
 }
 
 

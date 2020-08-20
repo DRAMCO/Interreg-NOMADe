@@ -21,8 +21,12 @@ void BLUETOOTH::reset(){
     digitalWrite(BT_RES, HIGH);
 }
 
+void BLUETOOTH::softReset(){
+    transmitFrame(CMD_RESET_REQ);
+}
+
 void BLUETOOTH::sleep_mode(void){
-  transmitFrame(CMD_SLEEP_REQ, NULL, NULL);
+  transmitFrame(CMD_SLEEP_REQ);
 }
 
 void BLUETOOTH::wakeup(void){
@@ -41,13 +45,42 @@ uint8_t BLUETOOTH::isConnected(){
 }
 
 void BLUETOOTH::disconnect(){
-    transmitFrame(CMD_DISCONNECT_REQ, 0, NULL);
+    transmitFrame(CMD_DISCONNECT_REQ);
     // NIET de beste manier, beter effectief uitlezen wat de BT module zegt
-    delay(200);
+    delay(50); //200
     while(isConnected()){
-        transmitFrame(CMD_DISCONNECT_REQ, 0, NULL);
-        delay(200);
+        transmitFrame(CMD_DISCONNECT_REQ);
+        delay(50); //200
     }
+}
+
+// ================================================================
+// ===               Scan management functions                  ===
+// ================================================================
+
+void BLUETOOTH::changeScanTiming(){
+    uint8_t buf [] = {RF_ScanTiming, 0x00};
+    transmitFrame(CMD_SET_REQ, 2, buf);
+    delay(200);
+}
+
+void BLUETOOTH::changeScanFactor(){
+    uint8_t buf [] = {RF_ScanFactor, 0x01};
+    transmitFrame(CMD_SET_REQ, 2, buf);
+    delay(200);
+}
+
+void BLUETOOTH::startScanning(){
+    
+    uint8_t buf [] = {RF_BeaconFlags, 0x01};
+    transmitFrame(CMD_SET_REQ, 2, buf);
+    delay(100);
+
+    transmitFrame(CMD_SCANSTART_REQ);
+}
+
+void BLUETOOTH::stopScanning(){
+    transmitFrame(CMD_SCANSTOP_REQ);
 }
 
 
@@ -96,8 +129,7 @@ void BLUETOOTH::updateBaudrate(uint8_t baudrate_index){
 uint8_t BLUETOOTH::getUARTBaudrate(){
 
     Serial.flush();
-  uint8_t data = UART_BaudrateIndex;
-  transmitFrame(CMD_GET_REQ, 1, &data);
+  transmitFrame(CMD_GET_REQ, UART_BaudrateIndex);
 
   delay(10);
 
@@ -181,6 +213,15 @@ void BLUETOOTH::transmitFrame(uint8_t cmd, uint8_t data){
     tx_buffer [3] = 0x00;
     tx_buffer [4] = data;
     UART_Write_Block(tx_buffer, 5);
+}
+
+void BLUETOOTH::transmitFrame(uint8_t cmd){
+    uint8_t tx_buffer [5];
+    tx_buffer [0] = 0x02;
+    tx_buffer [1] = cmd;
+    tx_buffer [2] = 0x00;
+    tx_buffer [3] = 0x00;
+    UART_Write_Block(tx_buffer, 4);
 }
 
 // ================================================================

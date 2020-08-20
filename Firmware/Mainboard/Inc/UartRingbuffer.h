@@ -11,7 +11,7 @@
 #include "stm32h7xx_hal.h"
 
 /* change the size of the buffer */
-#define UART_BUFFER_SIZE 500
+#define UART_BUFFER_SIZE 2000
 
 
 typedef struct
@@ -44,7 +44,7 @@ void RB_Uart_printbase(UART_HandleTypeDef *huart, ring_buffer *_tx_buffer, long 
 /*-------------------------------------------------------------------------------------------------*/
 
 /* Checks if the data is available to read in the rx_buffer */
-uint8_t RB_IsDataAvailable(ring_buffer *_rx_buffer);
+uint16_t RB_IsDataAvailable(ring_buffer *_rx_buffer);
 /*-------------------------------------------------------------------------------------------------*/
 
 /* Look for a particular string in the given buffer

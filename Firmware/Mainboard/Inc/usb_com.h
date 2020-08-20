@@ -27,9 +27,8 @@
 #include "stm32h7xx_hal.h"
 #include <string.h>
 #include <stdio.h>
-//#include "uart_com.h"
 #include "imu_com.h"
-//#include "main.h"
+#include "sd_card_com.h"
 
 extern UART_HandleTypeDef huart5;
 
@@ -42,6 +41,10 @@ void USB_COM_print(const char* str);
 
 
 void USB_COM_print_ln(const char* str);
+/*-------------------------------------------------------------------------------------------------*/
+
+
+void USB_COM_print_value_ln(const char* str, uint32_t value);
 /*-------------------------------------------------------------------------------------------------*/
 
 

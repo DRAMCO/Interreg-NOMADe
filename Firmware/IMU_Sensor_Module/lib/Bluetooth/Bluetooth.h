@@ -110,12 +110,19 @@ class BLUETOOTH {
 
         void init();
         void reset();
+        void softReset();
         void sleep_mode(void);
         void wakeup(void);
 
             //  Connection management functions
         uint8_t isConnected();
         void disconnect();
+
+            //  Scan management functions
+        void changeScanTiming();
+        void changeScanFactor();
+        void startScanning();
+        void stopScanning();
 
             //  Baudrate management functions
         void updateBaudrate(uint8_t baudrate_index);
@@ -130,6 +137,7 @@ class BLUETOOTH {
         void transmitData(uint8_t len, uint8_t *data);   
         void transmitFrame(uint8_t cmd, uint16_t len, uint8_t * data);
         void transmitFrame(uint8_t cmd, uint8_t data);
+        void transmitFrame(uint8_t cmd);
 
             //  Receive BT module messages
         bool receiveFrame(uint8_t * rsvbuf);

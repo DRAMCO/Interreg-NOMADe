@@ -40,18 +40,27 @@ void IMU_start_calibration(imu_module *imu){
 
 void IMU_start_synchronisation(imu_module *imu){
 	BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_START_SYNC);
-	
+}
+
+void IMU_send_adv_msg_wrong(imu_module *imu){
+	BT_transmit_CMD_Byte(imu->uart, CMD_SETBEACON_REQ, 0x00);
 }
 
 void IMU_send_adv_msg(imu_module *imu){
-	uint8_t buf [4]	= {ADV_MSG};
-	BT_transmit_CMD_Bytes(imu->uart, 0x0C, 0x01, buf);
+	BT_transmit_CMD_Byte(imu->uart, CMD_SETBEACON_REQ, ADV_MSG);
 }
 
 void IMU_go_to_sleep(imu_module *imu){
 	BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_GO_TO_SLEEP);
 }
 
+void IMU_start_measurements(imu_module *imu){
+	BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_START_MEASUREMENTS);
+}
+
+void IMU_stop_measurements(imu_module *imu){
+	BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_STOP_MEASUREMENTS);
+}
 
 
 

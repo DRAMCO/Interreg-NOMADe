@@ -15,6 +15,7 @@
 "mainboard\uart_com.o"
 "mainboard\imu_com.o"
 "mainboard\proteusii_driver.o"
+"mainboard\sd_card_com.o"
 "mainboard\stm32h7xx_hal_cortex.o"
 "mainboard\stm32h7xx_hal_rcc.o"
 "mainboard\stm32h7xx_hal_rcc_ex.o"

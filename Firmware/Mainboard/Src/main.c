@@ -20,6 +20,9 @@
  *  Interreg France-Wallonie-Vlaanderen NOMADe
  *
  */
+ 
+ //	Version	1: Test version + making init libraries
+ // Version 2: Ringbuffers + USB COM communication and control possible
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -29,6 +32,7 @@
 #include "uart_init.h"
 //#include "uart_com.h"
 #include "usb_com.h"
+#include "sd_card_com.h"
 //#include "imu_com.h"
 //#include "proteusII_driver.h"
 //#include "ble_lib.h"
@@ -61,8 +65,14 @@ UART_HandleTypeDef huart6;  //  BT2
 
 
 // Make IMU module 1 with hardcoded MAC address
-imu_module imu_1 = {&huart4, {0xC8, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 1: ", 0, 0, 0 };
+imu_module imu_1 = {1, &huart4, {0xC8, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 1: ", 0, 0, 0 };
+imu_module imu_2 = {2, &huart6, {0xA3, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 2: ", 0, 0, 0 };
+imu_module imu_3 = {3, &huart7, {0xCC, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 3: ", 0, 0, 0 };
+imu_module imu_4 = {4, &huart8, {0xB0, 0x0A, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 4: ", 0, 0, 0 };
+imu_module imu_5 = {5, &huart1, {0xC8, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 5: ", 0, 0, 0 };
+imu_module imu_6 = {6, &huart2, {0xC8, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 6: ", 0, 0, 0 };
 
+imu_module *imu_array [] = {&imu_1, &imu_2, &imu_3, &imu_4, &imu_5, &imu_6};
 
 /* Read from ringbuffer ------------------------------------------------------*/
 typedef struct{
@@ -84,7 +94,7 @@ read_from_ringbuffer uart8_buffer = { {0}, 0, 0, 0, 0};
 
 
 
-uint16_t file_nummer = 0;
+//uint16_t file_nummer = 0;
 
 uint8_t gpio_buf_IC5 = 0x00;
 
@@ -121,8 +131,8 @@ static void IOExpander_update(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t 
 
 
 /**********SD Card************/
-static void SDCard_create_new_file(void);
-static FRESULT SDCard_mount(void);
+//static void SDCard_create_new_file(void);
+//static FRESULT SDCard_mount(void);
 
 
 /*********Calculations********/
@@ -131,7 +141,7 @@ static void getYawPitchRoll(int16_t *data, float *newdata);
 
 
 /************Other************/
-static void printSystemTick(void);
+//static void printSystemTick(void);
 
 
 
@@ -171,11 +181,16 @@ int main(void)
   MX_USART3_UART_Init(TABLET_BAUDRATE);
   MX_USART6_UART_Init(BT_BAUDRATE);
 	
-	
+	//UART_Ringbuffer_Init(&huart1);
+	//UART_Ringbuffer_Init(&huart2);
+	//UART_Ringbuffer_Init(&huart3);
 	UART_Ringbuffer_Init(&huart4);
 	UART_Ringbuffer_Init(&huart5);
+	UART_Ringbuffer_Init(&huart6);
+	UART_Ringbuffer_Init(&huart7);
+	UART_Ringbuffer_Init(&huart8);
 
-	USB_COM_print("************************************\n   NOMADe Mainboard V1.0\n************************************\n");
+	USB_COM_print("************************************\n   NOMADe Mainboard V2.1\n************************************\n");
  
 	USB_COM_show_menu();
  
@@ -186,234 +201,29 @@ int main(void)
   startUpLeds();
   
   /* Mount SD Card */
-  FRESULT res = SDCard_mount();
+  FRESULT res = SD_CARD_COM_mount();
   
   /* Check for file to write the data */
   if(res == FR_OK){
-    HAL_GPIO_TogglePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin);
-    SDCard_create_new_file();
-    HAL_GPIO_TogglePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin);
+    SD_CARD_COM_create_new_file();
   }
 	
-	//IMU_connect(&imu_1);
-	
-	/*
-	uint8_t b [] = {RF_ScanTiming, 0x02};
-  BT_transmit_CMD_Bytes(&huart4, CMD_SET_REQ, 2, b);
-	HAL_Delay(200);
- */
-	
-  /* Connect with all the Bluetooth modules */
-  //SENS_connect(1);
-	//SENS_connect(2);
-	//SENS_connect(3);
-  
-  //HAL_Delay(1000);
-  
-  
-  /* Clear UART4 buffer */
-  //HAL_UART_Abort(&huart4);
-	//HAL_UART_Abort(&huart6);
-	//HAL_UART_Abort(&huart7);
-	
-	
-	//uint8_t dat [1]; 
-	//uint8_t buffer [100];
-	
-	
-	//----------- PRINT BATTERY VOLTAGE ----------//
-	//BT_transmitMsg_CMD(&huart4, IMU_SENSOR_MODULE_REQ_BATTERY_VOLTAGE);						//****	SENSOR 1: REQ BATTERY VOLTAGE	****//
-	
-	//HAL_UART_Receive(&huart4, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
-	
-	//HAL_UART_Receive(&huart4, buffer, 15, 1000); 					//****	SENSOR 1: GET AND CHECK ANWSER	****//
-	
-	//float voltage = (buffer[12] | buffer[13] << 8)/100.0;
-	//sprintf(string, "Battery voltage: %.02f V\n", voltage); 
-	//HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
-	
-	
-	
-	//BT_transmitMsg_CMD(&huart6, IMU_SENSOR_MODULE_REQ_BATTERY_VOLTAGE);						//****	SENSOR 2: REQ BATTERY VOLTAGE	****//
-	
-	//HAL_UART_Receive(&huart6, buffer, 12, 1000);					//****	SENSOR 2: GET FRAME "MSG SENDED"	****//
-	
-	//HAL_UART_Receive(&huart6, buffer, 15, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
-	
-	//voltage = (buffer[12] | buffer[13] << 8)/100.0;
-	//sprintf(string, "Battery voltage: %.02f V\n", voltage); 
-	//HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
-	
-	
-	
-	//BT_transmitMsg_CMD(&huart7, IMU_SENSOR_MODULE_REQ_BATTERY_VOLTAGE);						//****	SENSOR 3: REQ BATTERY VOLTAGE	****//
-	
-	//HAL_UART_Receive(&huart7, buffer, 12, 1000);					//****	SENSOR 3: GET FRAME "MSG SENDED"	****//
-	
-	//HAL_UART_Receive(&huart7, buffer, 15, 1000); 					//****	SENSOR 3: GET AND CHECK ANWSER	****//
-	
-	//voltage = (buffer[12] | buffer[13] << 8)/100.0;
-	//sprintf(string, "Battery voltage: %.02f V\n", voltage); 
-	//HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
-	
-	
-	//-------------------------------------------//
-	
-	
-		/* Clear UART4 buffer */
-  //HAL_UART_Abort(&huart4);
-	////HAL_UART_Abort(&huart6);
-	//HAL_UART_Abort(&huart7);
-	
-	//HAL_Delay(100);
-	
-	
-	//------------- CALIBRATIE -------------//
-	
-	//BT_transmitMsg_CMD(&huart4, IMU_SENSOR_MODULE_REQ_START_CALIBRATION);						//****	SENSOR 1: SEND CALIBRATION START MSG	****//
-	//BT_transmitMsg_CMD(&huart6, IMU_SENSOR_MODULE_REQ_START_CALIBRATION);						//****	SENSOR 2: SEND CALIBRATION START MSG	****//
-	//BT_transmitMsg_CMD(&huart7, IMU_SENSOR_MODULE_REQ_START_CALIBRATION);						//****	SENSOR 3: SEND CALIBRATION START MSG	****//
-	
-	//ja &huart4->RxXferCount
-	
-	
-	//HAL_UART_Receive(&huart4, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
-	//HAL_UART_Receive(&huart6, buffer, 12, 1000);					//****	SENSOR 2: GET FRAME "MSG SENDED"	****//
-	//HAL_UART_Receive(&huart7, buffer, 12, 1000);					//****	SENSOR 3: GET FRAME "MSG SENDED"	****//
-	
-	//HAL_UART_Transmit(&huart5, buffer, 12, 1000);   		// 	DEBUG PRINT -- eventueel nakijken??
-	
-	
-	//HAL_Delay(3000);																			//	Waiting during the calibration	//
-	
-	
-	//HAL_UART_Receive(&huart4, buffer, 13, 1000); 					//****	SENSOR 1: GET AND CHECK ANWSER	****//
-	//HAL_UART_Receive(&huart6, buffer, 13, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
-	//HAL_UART_Receive(&huart7, buffer, 13, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
-	
-	//HAL_UART_Transmit(&huart5, buffer, 13, 1000);   		// 	DEBUG PRINT -- eventueel nakijken??
-	
-	//HAL_Delay(1000);
-	
-	// 	CHECK ANSWER -- EVENTUALLY DO RECALIBRATION
-	
-	//-------------------------------------//
-	
-	// !!! CHECK IF SYNC IS DONE OF ALL THE MODULES AND SEND SYNC NOW 
-	
-	//----------- START GELIJKTIJDIG DE SENSOREN OP ----------//			
-	//BT_transmitMsg_CMD(&huart4, IMU_SENSOR_MODULE_REQ_START_SYNC);						//****	SENSOR 1: SEND START MEASUREMENTS MSG	****//
-	//BT_transmitMsg_CMD(&huart6, IMU_SENSOR_MODULE_REQ_START_SYNC);						//****	SENSOR 2: SEND START MEASUREMENTS MSG	****//
-	//BT_transmitMsg_CMD(&huart7, IMU_SENSOR_MODULE_REQ_START_SYNC);						//****	SENSOR 2: SEND START MEASUREMENTS MSG	****//
-	//uint32_t tick_now = HAL_GetTick();
-	
-	//HAL_UART_Receive(&huart4, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
-	//HAL_UART_Receive(&huart6, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
-	
-	//HAL_UART_Transmit(&huart5, buffer, 12, 1000);   		// 	DEBUG PRINT -- eventueel nakijken??
-	
-	//HAL_UART_Receive(&huart4, buffer, 13, 1000); 					//****	SENSOR 1: GET AND CHECK ANWSER	****//
-	//HAL_UART_Receive(&huart6, buffer, 13, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
-	// 	CHECK ANSWER -- EVENTUALLY ABORT IF THERE WAS A SENSOR NOT STARTED
-	
-	//--------------------------------------------------------//
-	
-	//HAL_Delay(1000);
-	
-	
-	//uint8_t buf [4]	= {ADV_MSG};
-	//BT_transmit_CMD_Bytes(&huart4, 0x0C, 0x01, buf);
-	//HAL_UART_Receive(&huart4, buffer, 6, 1000);	
-	
-	//HAL_Delay(500);
-	
-	//SENS_connect(1);
-	//SENS_connect(2);
-	//SENS_connect(3);
-	
-	//while(HAL_GetTick() < tick_now + 4000){
-		//HAL_Delay(10);
-	//}
-	
-	
-	
-		//----------- START GELIJKTIJDIG DE SENSOREN OP ----------//		
-	//BT_transmitMsg_CMD(&huart4, IMU_SENSOR_MODULE_REQ_START_MEASUREMENTS);						//****	SENSOR 1: SEND START MEASUREMENTS MSG	****//
-	//BT_transmitMsg_CMD(&huart6, IMU_SENSOR_MODULE_REQ_START_MEASUREMENTS);						//****	SENSOR 2: SEND START MEASUREMENTS MSG	****//
-	//BT_transmitMsg_CMD(&huart7, IMU_SENSOR_MODULE_REQ_START_MEASUREMENTS);						//****	SENSOR 2: SEND START MEASUREMENTS MSG	****//
-	
-	//HAL_UART_Receive(&huart4, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
-	//HAL_UART_Receive(&huart6, buffer, 12, 1000);					//****	SENSOR 1: GET FRAME "MSG SENDED"	****//
-	
-	//HAL_UART_Transmit(&huart5, buffer, 12, 1000);   		// 	DEBUG PRINT -- eventueel nakijken??
-	
-	//HAL_UART_Receive(&huart4, buffer, 13, 1000); 					//****	SENSOR 1: GET AND CHECK ANWSER	****//
-	//HAL_UART_Receive(&huart6, buffer, 13, 1000); 					//****	SENSOR 2: GET AND CHECK ANWSER	****//
-	// 	CHECK ANSWER -- EVENTUALLY ABORT IF THERE WAS A SENSOR NOT STARTED
-	
-	//--------------------------------------------------------//
-	
-	
-	
-	//HAL_Delay(1000);
 
-	/*
-	uint8_t reading_frame = 0, header_readed = 0;
-	uint8_t rsvbuf [200];
-	uint16_t len;
-	uint8_t rd_len_counter;
-	*/
-
-	//******************************//
-	//		***		BEGIN LOOP		***		//
-	//******************************//
-  while (1){	
-		BT_read_ringbuffer_pakket(&huart4, &uart4_buffer, &imu_1);
+	//**********************************//
+	//		***		BEGIN MAIN LOOP		***		//
+	//**********************************//
+  
+	while (1){	
+		BT_read_ringbuffer_pakket(imu_1.uart, &uart4_buffer, &imu_1);
+		BT_read_ringbuffer_pakket(imu_2.uart, &uart6_buffer, &imu_2);
+		BT_read_ringbuffer_pakket(imu_3.uart, &uart7_buffer, &imu_3);
+		BT_read_ringbuffer_pakket(imu_4.uart, &uart8_buffer, &imu_4);
 		USB_COM_check_rx_buffer();
 	}		
-	//*****************************//
-	//		***		 END LOOP		***		 //
-	//*****************************//
-		
-
-		/*
-    if(send_1 == 1){
-      send_1 = 0;
-      serPrintln(&huart5, "\nSENSOR 1: Send_1_1 active");
-      convertBuffer(&buf_1[0], 1);
-			num_send_1++;
-    }
-    if(send_1 == 2){
-      send_1 = 0;
-      serPrintln(&huart5, "\nSENSOR 1: Send_1_2 active");
-      convertBuffer(&buf_1[SIZE_PING_PONG_BUFFER], 1);
-    }
-		
-		if(send_2 == 1){
-      send_2 = 0;
-      serPrintln(&huart5, "\nSENSOR 2: Send_2_1 active");
-      convertBuffer(&buf_2[0], 2);
-			num_send_2++;
-    }
-    if(send_2 == 2){
-      send_2 = 0;
-      serPrintln(&huart5, "\nSENSOR 2: Send_2_2 active");
-      convertBuffer(&buf_2[SIZE_PING_PONG_BUFFER], 2);
-    }
-		
-		if(send_3 == 1){
-      send_3 = 0;
-      serPrintln(&huart5, "\nSENSOR 3: Send_3_1 active");
-      convertBuffer(&buf_3[0], 3);
-			//num_send_2++;
-    }
-    if(send_3 == 2){
-      send_3 = 0;
-      serPrintln(&huart5, "\nSENSOR 3: Send_3_2 active");
-      convertBuffer(&buf_3[SIZE_PING_PONG_BUFFER], 3);
-    }				
-  }
-*/
+	
+	//**********************************//
+	//		***		 END MAIN LOOP		***		//
+	//**********************************//
 
 }
 
@@ -472,6 +282,11 @@ void BT_read_ringbuffer_pakket(UART_HandleTypeDef *huart, read_from_ringbuffer *
 						memset(buffer->rsvbuf, 1, buffer->len + 5);
 					}
 				}
+				else{
+					buffer->reading_frame = 0;
+					buffer->header_readed = 0;
+					buffer->rd_len_counter = 0;
+				}
 			}
 		}
 	}
@@ -510,7 +325,8 @@ void rsv_bt_packet_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 
 		case CMD_CONNECT_IND:{
 				//  Connection established
-				USB_COM_print_info(imu->name, "Connection established");
+				if(rsvbuf [4]) 	USB_COM_print_info(imu->name, "Connection failed");
+				else						USB_COM_print_info(imu->name, "Connection established");
 				imu->connected = 1;
 		}
 		break;
@@ -530,6 +346,7 @@ void rsv_bt_packet_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 				//  Disconnected
 				USB_COM_print_info(imu->name, "Disconnected");
 				imu->connected = 0;
+				imu->is_calibrated = 0;
 		}
 		break;
 
@@ -570,9 +387,9 @@ void rsv_bt_packet_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 
 
 void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
-	if(len > 50){	//	Nog extra commando toevoegen, wanneer er data binnenkomt !!!!
-		convertBuffer(rsvbuf, 1);
-	}
+	//if(len > 50){	//	Nog extra commando toevoegen, wanneer er data binnenkomt !!!!
+		//convertBuffer(rsvbuf, imu->number);
+	//}
 
 	/*
 	char string [10];
@@ -587,24 +404,43 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 	switch(*(rsvbuf + 11)){
 
 		case IMU_SENSOR_MODULE_IND_BATTERY_VOLTAGE:{
+			
+			imu->battery_voltage = (*(rsvbuf + 12) | *(rsvbuf + 13));
 			float voltage = (*(rsvbuf + 12) | *(rsvbuf + 13) << 8)/100.0;
 			
+			USB_COM_print(imu->name);
 			char string [50];
 			sprintf(string, "Battery voltage: %.02f V\n", voltage); 
 			UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
-		}
+		}	break;
 		
 		case IMU_SENSOR_MODULE_IND_SYNC_DONE:{
-			IMU_send_adv_msg(imu);	
-		}
+			USB_COM_print_info(imu->name, "Synchronised starded");
+		} break;
 		
 		case IMU_SENSOR_MODULE_IND_SLEEP_MODE:{
 			USB_COM_print_info(imu->name, "goes sleeping ...");
 			imu->connected = 0;
-		}
+			imu->is_calibrated = 0;
+		} break;
 		
+		case IMU_SENSOR_MODULE_IND_CALIBRATION_DONE:{
+			USB_COM_print_info(imu->name, "Calibration done");
+			imu->is_calibrated = 1;
+		}	break;
+		
+		case IMU_SENSOR_MODULE_IND_MEASUREMENTS_STOPPED:{
+			USB_COM_print_info(imu->name, "Measurement stopped");
+		} break;
 
-
+		case IMU_SENSOR_MODULE_IND_MEASUREMENTS_STARTED:{
+			USB_COM_print_info(imu->name, "Measurement started");
+		} break;
+		
+		case IMU_SENSOR_MODULE_REQ_SEND_DATA:{
+			convertBuffer(rsvbuf, imu->number);
+		} break;
+			
 		default:{
 		}
 	}
@@ -616,9 +452,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   if(GPIO_Pin == USER_BUTTON_Pin){ //GPIO_PIN_2
     HAL_GPIO_TogglePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin);
 		IMU_go_to_sleep(&imu_1);
-		//IMU_go_to_sleep(&imu_2);
-		//IMU_go_to_sleep(&imu_3);
-		//IMU_go_to_sleep(&imu_4);
+		IMU_go_to_sleep(&imu_2);
+		IMU_go_to_sleep(&imu_3);
+		IMU_go_to_sleep(&imu_4);
 		//IMU_go_to_sleep(&imu_5);
 		//IMU_go_to_sleep(&imu_6);
   }
@@ -626,7 +462,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 
 
 
-
+/*
 void SDCard_create_new_file(void){
   char string [100];
   FRESULT res;
@@ -679,11 +515,11 @@ FRESULT SDCard_mount(void){
   }
   return code;
 }
+*/
 
 
 
-
-
+/*
 void printSystemTick(void){
   char buffer[10];
   uint32_t tick = HAL_GetTick();
@@ -691,6 +527,7 @@ void printSystemTick(void){
   UART_COM_write(&huart5, (uint8_t *)buffer, sizeof(buffer));
 }
 
+*/
 
 
 
@@ -698,10 +535,12 @@ void printSystemTick(void){
 
 
 
-#define SEND_DATA_VISUAL
+
+//#define SEND_DATA_VISUAL
 //#define SEND_DATA_YPR
 //#define SEND_DATA_QUATERNIONS
-#define SAVE_SD_CARD
+//#define SAVE_SD_CARD
+#define SAVE_SD_CARD_NEW
 
 void convertBuffer(uint8_t * buf, uint8_t sensor_number){
 	
@@ -711,11 +550,14 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
     uint16_t sd_card_buffer [20][3];
   #endif
   
+  #ifdef SAVE_SD_CARD_NEW
+    uint8_t sd_card_buffer [NUMBER_OF_DATA_READS_IN_BT_PACKET * 6];
+  #endif
   
   
   
   for(int j = 0; j < NUMBER_OF_BT_PACKETS; j++){
-    uint16_t start_pos = j * SIZE_BT_PACKET + PACKET_START_POS;
+    uint16_t start_pos = j * SIZE_BT_PACKET + PACKET_START_POS + 1; // First data byte is command "IMU_SENSOR_MODULE_REQ_SEND_DATA"
     for(int i = 0; i < NUMBER_OF_DATA_READS_IN_BT_PACKET; i++){
       int16_t data [4];
       data[0] = ((buf[start_pos + 0 + 8 * i] << 8) | buf[start_pos + 1 + 8 * i]);
@@ -783,6 +625,15 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
         sd_card_buffer [j*NUMBER_OF_DATA_READS_IN_BT_PACKET + i][1] = (uint16_t)(buf_YPR[1]/PI*180+180);
         sd_card_buffer [j*NUMBER_OF_DATA_READS_IN_BT_PACKET + i][2] = (uint16_t)(buf_YPR[2]/PI*180+180);        
       #endif
+			
+			      //    ***   Option 5: Save YPR on SD card  --NEW--  ***   //      
+      #ifdef SAVE_SD_CARD_NEW
+				for(uint8_t k = 0; k < 3; k++){
+					uint16_t value = (uint16_t)(buf_YPR[k]/PI*180+180);
+					sd_card_buffer [j*NUMBER_OF_DATA_READS_IN_BT_PACKET + i*6 + 2 * k] 			= (uint8_t) value;
+					sd_card_buffer [j*NUMBER_OF_DATA_READS_IN_BT_PACKET + i*6 + 2 * k + 1] 	= (uint8_t) value >> 8;
+				}
+			#endif
     }
   }
   
@@ -799,6 +650,22 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
     }
     f_close(&myFILE);
     HAL_GPIO_TogglePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin);   
+  #endif
+		
+		
+  //    ***   Option 5: Save YPR on SD card  --NEW-- 	***   //      
+  #ifdef SAVE_SD_CARD_NEW
+    //char path [25];
+    //sprintf(path, "MET_%d.TXT", file_nummer);
+    //f_open(&myFILE, path, FA_OPEN_APPEND | FA_WRITE); 
+		SD_CARD_COM_save_data(systemtick, sensor_number, sd_card_buffer);
+    /*
+		for(int i = 0; i < SIZE_SD_CARD_READ_BUF; i++){
+			SD_CARD_COM_save_data(systemtick, sensor_number, &sd_card_buffer);
+      f_printf(&myFILE, "%d,%d,%d,%d,%d\n", systemtick, sensor_number, (uint16_t)(sd_card_buffer[i][0]), (uint16_t)(sd_card_buffer[i][1]), (uint16_t)(sd_card_buffer[i][2]));
+    }
+		*/
+    //f_close(&myFILE);
   #endif
   
 }

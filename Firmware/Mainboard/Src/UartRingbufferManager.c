@@ -112,7 +112,7 @@ void UART_Write(UART_HandleTypeDef *huart, uint8_t byte){
 }
 
 
-uint8_t UART_IsDataAvailable(UART_HandleTypeDef *huart){
+uint16_t UART_IsDataAvailable(UART_HandleTypeDef *huart){
 	if(huart->Instance == USART1){
 		return RB_IsDataAvailable(&huart1_rx_buffer);
 	}

@@ -10,8 +10,8 @@
  *  Gebroeders De Smetstraat 1,
  *  B-9000 Gent, Belgium
  *
- *         File: UartRingBufferManager.h
- *      Created: 2020-02-27
+ *         File: uart_com.h
+ *      Created: 2020-08-12
  *       Author: Jarne Van Mulders
  *      Version: V1.0
  *
@@ -21,54 +21,42 @@
  *
  */
 
-#ifndef UARTRINGBUFFERMANAGER_H_
-#define UARTRINGBUFFERMANAGER_H_
+#ifndef SD_CARD_COM_H_
+#define SD_CARD_COM_H_
 
 #include "stm32h7xx_hal.h"
-#include "UartRingbuffer.h"
+#include <string.h>
+#include <stdio.h>
+#include "fatfs.h"
+#include "usb_com.h"
 
 
-void UART_Ringbuffer_Init(UART_HandleTypeDef *huart);
+FRESULT SD_CARD_COM_mount(void);
 /*-------------------------------------------------------------------------------------------------*/
 
 
-uint8_t UART_Read(UART_HandleTypeDef *huart);
+void SD_CARD_COM_create_new_file(void);
 /*-------------------------------------------------------------------------------------------------*/
 
 
-void UART_Write(UART_HandleTypeDef *huart, uint8_t byte);
+uint16_t SD_CARD_COM_check_existing_files(void);
 /*-------------------------------------------------------------------------------------------------*/
 
 
-uint16_t UART_IsDataAvailable(UART_HandleTypeDef *huart);
+void SD_CARD_COM_open_file(void);
 /*-------------------------------------------------------------------------------------------------*/
 
 
-void UART_ISR_Manager(UART_HandleTypeDef *huart);
+void SD_CARD_COM_close_file(void);
 /*-------------------------------------------------------------------------------------------------*/
 
 
+void SD_CARD_COM_save_data(uint32_t systemtick, uint8_t sensor_number, uint8_t *sd_card_buffer);
+/*-------------------------------------------------------------------------------------------------*/
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+FRESULT SD_CARD_COM_open_close(FIL* fp, const TCHAR* p, BYTE mode);
+/*-------------------------------------------------------------------------------------------------*/
 
 
 #endif

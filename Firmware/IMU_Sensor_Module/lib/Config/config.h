@@ -3,7 +3,6 @@
 
 #include "Arduino.h"
 
-
 // ================================================================
 // ===                    Define constants                      ===
 // ================================================================
@@ -30,6 +29,13 @@
 #define BAUDRATE_921600             0x06
 
 // ================================================================
+// ===                    Define MPU Settings                   ===
+// ================================================================
+
+    // If external clock 19.2MHz is available
+//#define MPU_EXTERNAL_CLOCK
+
+// ================================================================
 // ===                    Define MCU pins                       ===
 // ================================================================
 
@@ -48,37 +54,7 @@
 #define WAKE_UP_PIN         A3
 
 
-
-// ================================================================
-// ===              Define Communication Commands               ===
-// ================================================================
-
-#define IMU_SENSOR_MODULE_REQ_STATUS                0x30
-#define IMU_SENSOR_MODULE_IND_STATUS                0x31
-
-#define IMU_SENSOR_MODULE_REQ_BATTERY_VOLTAGE       0x40
-#define IMU_SENSOR_MODULE_IND_BATTERY_VOLTAGE       0x41
-#define IMU_SENSOR_MODULE_IND_BATTERY_LOW_ERROR     0x42
-
-#define IMU_SENSOR_MODULE_REQ_START_SYNC            0x60
-#define IMU_SENSOR_MODULE_IND_SYNC_DONE             0x61
-#define IMU_SENSOR_MODULE_REQ_STOP_MEASUREMENTS     0x62
-#define IMU_SENSOR_MODULE_IND_MEASUREMENTS_STOPPED  0x63
-
-#define IMU_SENSOR_MODULE_REQ_START_CALIBRATION     0x70
-#define IMU_SENSOR_MODULE_IND_CANNOT_CALIBRATE      0x71
-#define IMU_SENSOR_MODULE_IND_CALIBRATION_DONE      0x72
-#define IMU_SENSOR_MODULE_IND_NEED_TO_CALIBRATE     0x73
-
-#define IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED 0x80
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_10HZ    0x81
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_20HZ    0x82
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_25HZ    0x83
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_50HZ    0x84
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_100HZ   0x85
-
-#define IMU_SENSOR_MODULE_REQ_GO_TO_SLEEP           0x90
-#define IMU_SENSOR_MODULE_IND_SLEEP_MODE            0x91
+enum Sensor_Reader_State{SLEEP, STARTUP, CALIBRATION, IDLE, SYNC, RUNNING, CHARGING, BATTERY_LOW};
 
 //#define DEBUG
 

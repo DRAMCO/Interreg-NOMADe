@@ -32,6 +32,7 @@
 
 /* IMU module status variables -----------------------------------------------*/
 typedef struct __imu_module{
+	volatile uint8_t number;
 	UART_HandleTypeDef *uart;
 	uint8_t mac_address [6];
 	char *name;
@@ -44,6 +45,8 @@ typedef struct __imu_module{
 // ================================================================
 // ===              Define Communication Commands               ===
 // ================================================================
+
+#define IMU_SENSOR_MODULE_REQ_SEND_DATA             0x20
 
 #define IMU_SENSOR_MODULE_REQ_STATUS                0x30
 #define IMU_SENSOR_MODULE_IND_STATUS                0x31
@@ -101,6 +104,10 @@ void IMU_start_synchronisation(imu_module *imu);
 /*-------------------------------------------------------------------------------------------------*/
 
 
+void IMU_send_adv_msg_wrong(imu_module *imu);
+/*-------------------------------------------------------------------------------------------------*/
+
+
 void IMU_send_adv_msg(imu_module *imu);
 /*-------------------------------------------------------------------------------------------------*/
 
@@ -108,6 +115,13 @@ void IMU_send_adv_msg(imu_module *imu);
 void IMU_go_to_sleep(imu_module *imu);
 /*-------------------------------------------------------------------------------------------------*/
 
+
+void IMU_start_measurements(imu_module *imu);
+/*-------------------------------------------------------------------------------------------------*/
+
+
+void IMU_stop_measurements(imu_module *imu);
+/*-------------------------------------------------------------------------------------------------*/
 
 
 #endif

@@ -148,8 +148,10 @@ void BT_transmit_CMD(UART_HandleTypeDef *haurt, uint8_t cmd);
 
 
 		//  Receive BT module messages
+/*
 uint8_t BT_receiveFrame_TimeOut(uint8_t * rsvbuf, uint16_t timeout);
 uint8_t BT_receiveFrame(uint8_t * rsvbuf);
+*/
 
 //	Checksum calculation
 uint8_t BT_calculateCS(uint8_t * data, uint8_t len);

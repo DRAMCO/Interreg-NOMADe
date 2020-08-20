@@ -63,3 +63,4 @@ mainboard\main.o: ../Inc/imu_com.h
 mainboard\main.o: ../Inc/proteusII_driver.h
 mainboard\main.o: ../Inc/uart_com.h
 mainboard\main.o: ../Inc/usb_com.h
+mainboard\main.o: ../Inc/sd_card_com.h

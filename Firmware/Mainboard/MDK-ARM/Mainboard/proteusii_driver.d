@@ -50,3 +50,16 @@ mainboard\proteusii_driver.o: ../Inc/uart_com.h
 mainboard\proteusii_driver.o: ../Inc/usb_com.h
 mainboard\proteusii_driver.o: ../Inc/imu_com.h
 mainboard\proteusii_driver.o: ../Inc/proteusII_driver.h
+mainboard\proteusii_driver.o: ../Inc/sd_card_com.h
+mainboard\proteusii_driver.o: ../Inc/fatfs.h
+mainboard\proteusii_driver.o: ../Middlewares/Third_Party/FatFs/src/ff.h
+mainboard\proteusii_driver.o: ../Middlewares/Third_Party/FatFs/src/integer.h
+mainboard\proteusii_driver.o: ../Inc/ffconf.h
+mainboard\proteusii_driver.o: ../Inc/main.h
+mainboard\proteusii_driver.o: ../Inc/bsp_driver_sd.h
+mainboard\proteusii_driver.o: ../Inc/fatfs_platform.h
+mainboard\proteusii_driver.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+mainboard\proteusii_driver.o: ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h
+mainboard\proteusii_driver.o: ../Middlewares/Third_Party/FatFs/src/diskio.h
+mainboard\proteusii_driver.o: ../Inc/sd_diskio.h
+mainboard\proteusii_driver.o: ../Inc/usb_com.h

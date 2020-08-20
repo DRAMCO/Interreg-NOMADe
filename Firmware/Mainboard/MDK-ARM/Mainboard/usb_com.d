@@ -50,3 +50,15 @@ mainboard\usb_com.o: ../Inc/UartRingbuffer.h
 mainboard\usb_com.o: ../Inc/def.h
 mainboard\usb_com.o: ../Inc/uart_com.h
 mainboard\usb_com.o: ../Inc/usb_com.h
+mainboard\usb_com.o: ../Inc/sd_card_com.h
+mainboard\usb_com.o: ../Inc/fatfs.h
+mainboard\usb_com.o: ../Middlewares/Third_Party/FatFs/src/ff.h
+mainboard\usb_com.o: ../Middlewares/Third_Party/FatFs/src/integer.h
+mainboard\usb_com.o: ../Inc/ffconf.h
+mainboard\usb_com.o: ../Inc/main.h
+mainboard\usb_com.o: ../Inc/bsp_driver_sd.h
+mainboard\usb_com.o: ../Inc/fatfs_platform.h
+mainboard\usb_com.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdlib.h
+mainboard\usb_com.o: ../Middlewares/Third_Party/FatFs/src/ff_gen_drv.h
+mainboard\usb_com.o: ../Middlewares/Third_Party/FatFs/src/diskio.h
+mainboard\usb_com.o: ../Inc/sd_diskio.h
