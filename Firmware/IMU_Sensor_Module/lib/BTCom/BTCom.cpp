@@ -122,6 +122,7 @@ void BTCOM::rsv_msg_handler(uint8_t * command_msg){
     case IMU_SENSOR_MODULE_REQ_START_CALIBRATION:{
       if(state == IDLE){
         state = CALIBRATION;      /***    Start calibration     ***/
+        bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_CALIBRATION_STARTED);
       }
       else{
           //  Send msg, cannot calibrate!!
@@ -152,6 +153,8 @@ void BTCOM::rsv_msg_handler(uint8_t * command_msg){
       digitalWrite(IND_LED, LOW);
       mpu_read_counter = 0;
       buffer_counter = 0;
+      sync_executed = 0;
+      packet_send_number = 0;
       state = IDLE;
     }
     break;
@@ -205,6 +208,8 @@ void BTCOM::rsv_msg_handler(uint8_t * command_msg){
       bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_MEASUREMENTS_STARTED);
 
       digitalWrite(IND_LED, LOW);
+
+      packet_send_number = 0;
 
       uint8_t value = (millis() - sync_time + 1000)/1000;
       uint32_t starttime = sync_time + (1000 * value);

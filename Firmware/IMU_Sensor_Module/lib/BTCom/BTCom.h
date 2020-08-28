@@ -59,6 +59,7 @@ extern bool battery_low_state;
 
 extern uint8_t mpu_read_counter;
 extern uint8_t buffer_counter;
+extern uint16_t packet_send_number;
 
 extern uint8_t pack_nr_before_send;
 extern uint32_t sync_time;
