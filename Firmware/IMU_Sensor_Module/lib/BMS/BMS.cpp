@@ -14,7 +14,7 @@ void BMS::init(){
 float BMS::getBatVoltage(){
     digitalWrite(CHECK_BAT, HIGH);
     uint16_t val = analogRead(V_BAT);
-    float result = val/1023.0*1.1*133/33;
+    float result = val/1023.0*3.3*133/100;
     digitalWrite(CHECK_BAT, LOW);
     return result;
 }

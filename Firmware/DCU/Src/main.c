@@ -43,8 +43,6 @@ float PI = 3.14159265358979323846;
 
 I2C_HandleTypeDef hi2c1;
 
-SD_HandleTypeDef hsd1;
-
 TIM_HandleTypeDef htim2;
 
 UART_HandleTypeDef huart4;  //  BT1
@@ -57,14 +55,34 @@ UART_HandleTypeDef huart3;  //  FT312D -- TABLET
 UART_HandleTypeDef huart6;  //  BT2
 
 
+#define FIRST_SET_OF_MODULES
+//#define SECOND_SET_OF_MODULES
+//#define THIRD_SET_OF_MODULES
 
-// Make IMU module 1 with hardcoded MAC address
-imu_module imu_1 = {1, &huart4, {0xC8, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 1: ", 0, 0, 0 };
-imu_module imu_2 = {2, &huart6, {0xA3, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 2: ", 0, 0, 0 };
-imu_module imu_3 = {3, &huart7, {0xCC, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 3: ", 0, 0, 0 };
-imu_module imu_4 = {4, &huart8, {0xB0, 0x0A, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 4: ", 0, 0, 0 };
-imu_module imu_5 = {5, &huart1, {0xC8, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 5: ", 0, 0, 0 };
-imu_module imu_6 = {6, &huart2, {0xC8, 0x0B, 0x20, 0xDA, 0x18, 0x00}, "IMU Module 6: ", 0, 0, 0 };
+#ifdef FIRST_SET_OF_MODULES
+imu_module imu_1 = {1, &huart4, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x4B}, "BLE slot 1: ", 0, 0, 0, 0, 0 };
+imu_module imu_2 = {2, &huart6, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x4A}, "BLE slot 2: ", 0, 0, 0, 0, 0 };
+imu_module imu_3 = {3, &huart7, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x49}, "BLE slot 3: ", 0, 0, 0, 0, 0 };
+imu_module imu_4 = {4, &huart8, {0x00, 0x18, 0xDA, 0x20, 0x04, 0xBA}, "BLE slot 4: ", 0, 0, 0, 0, 0 };
+#endif
+
+#ifdef SECOND_SET_OF_MODULES
+imu_module imu_1 = {1, &huart4, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x43}, "BLE slot 1: ", 0, 0, 0, 0, 0 };
+imu_module imu_2 = {2, &huart6, {0x00, 0x18, 0xDA, 0x20, 0x0B, 0xCC}, "BLE slot 2: ", 0, 0, 0, 0, 0 };
+imu_module imu_3 = {3, &huart7, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x35}, "BLE slot 3: ", 0, 0, 0, 0, 0 };
+imu_module imu_4 = {4, &huart8, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x27}, "BLE slot 4: ", 0, 0, 0, 0, 0 };
+#endif
+
+#ifdef THIRD_SET_OF_MODULES
+imu_module imu_1 = {1, &huart4, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x26}, "BLE slot 1: ", 0, 0, 0, 0, 0 };
+imu_module imu_2 = {2, &huart6, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x44}, "BLE slot 2: ", 0, 0, 0, 0, 0 };
+imu_module imu_3 = {3, &huart7, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x34}, "BLE slot 3: ", 0, 0, 0, 0, 0 };
+imu_module imu_4 = {4, &huart8, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x45}, "BLE slot 4: ", 0, 0, 0, 0, 0 };
+#endif
+
+imu_module imu_5 = {5, &huart1, {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, "BLE slot 5: ", 0, 0, 0, 0, 0 };
+imu_module imu_6 = {6, &huart2, {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, "BLE slot 6: ", 0, 0, 0, 0, 0 };
+
 
 imu_module *imu_array [] = {&imu_1, &imu_2, &imu_3, &imu_4, &imu_5, &imu_6};
 
@@ -86,9 +104,6 @@ read_from_ringbuffer uart6_buffer = { {0}, 0, 0, 0, 0};
 read_from_ringbuffer uart7_buffer = { {0}, 0, 0, 0, 0};
 read_from_ringbuffer uart8_buffer = { {0}, 0, 0, 0, 0};
 
-
-
-//uint16_t file_nummer = 0;
 
 uint8_t gpio_buf_IC5 = 0x00;
 
@@ -122,6 +137,13 @@ static void IOExpander_set(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io)
 static void IOExpander_clear(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io);
 static void IOExpander_clearAll(I2C_HandleTypeDef *hi2c, uint8_t address);
 static void IOExpander_update(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t buf);
+static uint8_t IOExpander_getstate(uint8_t io);
+static void IOExpander_toggle(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io);
+
+
+/**********SD Card************/
+//static void SDCard_create_new_file(void);
+//static FRESULT SDCard_mount(void);
 
 
 /*********Calculations********/
@@ -157,8 +179,8 @@ int main(void)
   MX_TIM2_Init();
   
   /* Initialize SD card periferals */
-  MX_SDMMC1_SD_Init();
-  MX_FATFS_Init();
+  //MX_SDMMC1_SD_Init();
+  //MX_FATFS_Init();
   
   /* Initialize UART */
   MX_UART4_Init(BT_BAUDRATE);
@@ -240,6 +262,7 @@ void BT_read_ringbuffer_pakket(UART_HandleTypeDef *huart, read_from_ringbuffer *
 				buffer->len = *(buffer->rsvbuf + 2) | (*(buffer->rsvbuf + 3) << 8);
 				
 				#ifdef USB_DEBUG
+					char string [100];
 					sprintf(string, "len: %d\n", buffer->len); 
 					HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
 				#endif
@@ -260,6 +283,7 @@ void BT_read_ringbuffer_pakket(UART_HandleTypeDef *huart, read_from_ringbuffer *
 						//USB_COM_print_buffer_hex(buffer->rsvbuf, buffer->len);
 						
 						#ifdef USB_DEBUG
+							char string [100];
 							sprintf(string, "Command: %02X Len: %02X\n", buffer->rsvbuf [1], buffer->rsvbuf [2]); 
 							UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
 						#endif
@@ -315,8 +339,10 @@ void rsv_bt_packet_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 		case CMD_CONNECT_IND:{
 				//  Connection established
 				if(rsvbuf [4]) 	USB_COM_print_info(imu->name, "Connection failed");
-				else						USB_COM_print_info(imu->name, "Connection established");
-				imu->connected = 1;
+				else{					
+					USB_COM_print_info(imu->name, "Connection established");
+					imu->connected = 1;
+				}
 		}
 		break;
 
@@ -357,17 +383,23 @@ void rsv_bt_packet_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 
 		case CMD_SCANSTART_CNF:{
 				//  Scanning started
+			USB_COM_print_info(imu->name, "Start scanning");
 		}
 		break;
 
 		case CMD_SCANSTOP_CNF:{
 				//  Scanning stopped
+			USB_COM_print_info(imu->name, "Stop scanning");
 		}
 		break;
 
 		case CMD_BEACON_IND:{
 		}
 		break;
+		
+		case CMD_SETBEACON_CNF:{
+			USB_COM_print_info(imu->name, "Beacon content changed");
+		} break;
 
 		default:
 				break;
@@ -376,12 +408,12 @@ void rsv_bt_packet_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 
 
 void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
-
+	
 	switch(*(rsvbuf + 11)){
 
 		case IMU_SENSOR_MODULE_IND_BATTERY_VOLTAGE:{
 			
-			imu->battery_voltage = (*(rsvbuf + 12) | *(rsvbuf + 13));
+			imu->battery_voltage = (*(rsvbuf + 12) | *(rsvbuf + 13) << 8);
 			float voltage = (*(rsvbuf + 12) | *(rsvbuf + 13) << 8)/100.0;
 			
 			USB_COM_print(imu->name);
@@ -390,8 +422,8 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 			UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
 		}	break;
 		
-		case IMU_SENSOR_MODULE_IND_SYNC_DONE:{
-			USB_COM_print_info(imu->name, "Synchronised starded");
+		case IMU_SENSOR_MODULE_IND_SYNC_STARTED:{
+			USB_COM_print_info(imu->name, "Synchronised started");
 		} break;
 		
 		case IMU_SENSOR_MODULE_IND_SLEEP_MODE:{
@@ -407,16 +439,72 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 		
 		case IMU_SENSOR_MODULE_IND_MEASUREMENTS_STOPPED:{
 			USB_COM_print_info(imu->name, "Measurement stopped");
+			imu->measuring = 0;
 		} break;
 
 		case IMU_SENSOR_MODULE_IND_MEASUREMENTS_STARTED:{
 			USB_COM_print_info(imu->name, "Measurement started");
+			imu->measuring = 1;
 		} break;
 		
 		case IMU_SENSOR_MODULE_REQ_SEND_DATA:{
 			convertBuffer(rsvbuf, imu->number);
 		} break;
+		
+		case IMU_SENSOR_MODULE_IND_CALIBRATION_STARTED:{
+			USB_COM_print_info(imu->name, "Calibration started");
+		} break;
+		
+		case IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED:{
+			USB_COM_print_info(imu->name, "Frequency changed");
+		} break;
+		
+		case IMU_SENSOR_MODULE_IND_BATTERY_LOW_ERROR:{
+			USB_COM_print_info(imu->name, "Battery low, recharge the battery");
+		} break;
+		
+		case IMU_SENSOR_MODULE_IND_NEED_TO_CALIBRATE:{
+			USB_COM_print_info(imu->name, "Do first a calibration before starting the measurements");
+		} break;
+		
+		case IMU_SENSOR_MODULE_IND_NEED_TO_SYNCHRONISE:{
+			USB_COM_print_info(imu->name, "Do first a synchronisation before starting the measurements");
+		} break;
+		
+		case IMU_SENSOR_MODULE_IND_CANNOT_CALIBRATE:{
+			USB_COM_print_info(imu->name, "Cannot be calibrated at this moment");
+		}	break;
+		
+		case IMU_SENSOR_MODULE_IND_CANNOT_SYNC:{
+			USB_COM_print_info(imu->name, "Cannot be synchronised at this moment");
+		}	break;
 			
+		case IMU_SENSOR_MODULE_IND_SYNC_DONE:{
+			//USB_COM_print_info(imu->name, "Synchronisation done");
+			//imu->sync_time = HAL_GetTick();
+			//char string [50];
+			//sprintf(string, "%sDCU Syst Tick: %d \n", imu->name, imu->sync_time); 
+			//UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
+		}	break;
+		
+		case IMU_SENSOR_MODULE_IND_SYNC_TIME_CHANGED:{
+			USB_COM_print_info(imu->name, "Sync time changed");
+		} break;
+		
+		case IMU_SENSOR_MODULE_IND_SYNC_TIME:{
+			imu->sync_time = HAL_GetTick();
+			char string [50];
+			sprintf(string, "%sDCU Syst Tick: %d \n", imu->name, imu->sync_time); 
+			UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
+		} break;
+		
+		case IMU_SENSOR_MODULE_RSP_MILLIS:{
+			uint32_t millis = (*(rsvbuf + 12) | (*(rsvbuf + 13) << 8) | (*(rsvbuf + 14) << 16) | (*(rsvbuf + 15) << 24));
+			char string [50];
+			sprintf(string, "%sIMU Syst Tick: %d \n", imu->name, millis); 
+			UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
+		} break;
+	
 		default:{
 		}
 	}
@@ -427,12 +515,16 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   if(GPIO_Pin == USER_BUTTON_Pin){ //GPIO_PIN_2
     HAL_GPIO_TogglePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin);
+		
+		//for(uint8_t i = 0; i < 6; i++)	if(imu_array[i]->measuring)	IMU_stop_measurements(imu_array[i]);
+		
 		IMU_go_to_sleep(&imu_1);
 		IMU_go_to_sleep(&imu_2);
 		IMU_go_to_sleep(&imu_3);
 		IMU_go_to_sleep(&imu_4);
 		//IMU_go_to_sleep(&imu_5);
 		//IMU_go_to_sleep(&imu_6);
+		IMU_reset_previous_connected_modules_array();
   }
 }
 
@@ -442,24 +534,37 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
 //#define SEND_DATA_YPR
 //#define SEND_DATA_QUATERNIONS
 //#define SAVE_SD_CARD
-#define SAVE_SD_CARD_NEW
+//#define SAVE_SD_CARD_NEW
+#define SAVE_QUARTERNIONS_SD_CARD
 
 void convertBuffer(uint8_t * buf, uint8_t sensor_number){
 	
-	uint32_t systemtick = HAL_GetTick();
+	uint32_t timestamp;
+	uint16_t pakket_send_nr;
   
   #ifdef SAVE_SD_CARD
     uint16_t sd_card_buffer [20][3];
   #endif
   
-  #ifdef SAVE_SD_CARD_NEW
+  #ifdef SAVE_YPR_SD_CARD
     uint8_t sd_card_buffer [NUMBER_OF_DATA_READS_IN_BT_PACKET * 6];
+  #endif
+	
+	#ifdef SAVE_QUARTERNIONS_SD_CARD
+		int16_t sd_card_buffer [NUMBER_OF_DATA_READS_IN_BT_PACKET * 4];
   #endif
   
   
   
-  for(int j = 0; j < NUMBER_OF_BT_PACKETS; j++){
-    uint16_t start_pos = j * SIZE_BT_PACKET + PACKET_START_POS + 1; // First data byte is command "IMU_SENSOR_MODULE_REQ_SEND_DATA"
+  for(uint8_t j = 0; j < NUMBER_OF_BT_PACKETS; j++){
+    uint16_t start_pos = PACKET_START_POS + 7; 
+		// 1e byte: 					command "IMU_SENSOR_MODULE_REQ_SEND_DATA"
+		// 2e & 3e byte:			packet_send_nr
+		// 3e 4e 5e 6e byte:	timestamp
+		
+		pakket_send_nr = buf[PACKET_START_POS + 1] | (buf[PACKET_START_POS + 2] << 8);
+		timestamp = buf[PACKET_START_POS + 3] | (buf[PACKET_START_POS + 4] << 8) | (buf[PACKET_START_POS + 5] << 16) | (buf[PACKET_START_POS + 6] << 24);
+		
     for(int i = 0; i < NUMBER_OF_DATA_READS_IN_BT_PACKET; i++){
       int16_t data [4];
       data[0] = ((buf[start_pos + 0 + 8 * i] << 8) | buf[start_pos + 1 + 8 * i]);
@@ -470,9 +575,18 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
       //uint8_t tx_send [8] = {data[0] >> 8, (uint8_t)data[0], data[1] >> 8, (uint8_t)data[1], data[2] >> 8, (uint8_t)data[2], data[3] >> 8, (uint8_t)data[3]};
       //HAL_UART_Transmit(&huart3, tx_send, 8, 25);
       
-      float buf_YPR [3];
-      getYawPitchRoll(data, buf_YPR);
-      
+			/*
+			char string [100];
+			sprintf(string, "%d %d %d %d\n", data[0], data[1], data[2], data[3]); 
+				//sprintf(string, "Timestamp: %i - Yaw: %i | Pitch: %i | Roll: %i - %i\n", timestamp, (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1); 
+			UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
+			*/
+			
+			#ifdef SAVE_YPR_SD_CARD
+				float buf_YPR [3];
+				getYawPitchRoll(data, buf_YPR);
+      #endif
+			
       
       //    ***   Option 1: Visual    ***   //
       #ifdef SEND_DATA_VISUAL
@@ -480,8 +594,8 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
         //sprintf(string, "Data 0: %.2i | Data 1: %.2i | Data 2: %.2i | Data 3: %.2i\n", data[0], data[1], data[2], data[3]); 
         //sprintf(string, "Yaw: %.2f | Pitch: %.2f | Roll: %.2f\n", (buf_YPR[0]/PI*180+180), (buf_YPR[1]/PI*180+180), (buf_YPR[2]/PI*180+180)); 
         //sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180)); 
-				sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i, %i, %i, %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1, num_send_2, systemtick); 
-				//sprintf(string, "Timestamp: %i - Yaw: %i | Pitch: %i | Roll: %i - %i\n", systemtick, (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1); 
+				sprintf(string, "Yaw: %i | Pitch: %i | Roll: %i, %i, %i, %i\n", (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1, num_send_2, timestamp); 
+				//sprintf(string, "Timestamp: %i - Yaw: %i | Pitch: %i | Roll: %i - %i\n", timestamp, (uint16_t)(buf_YPR[0]/PI*180+180), (uint16_t)(buf_YPR[1]/PI*180+180), (uint16_t)(buf_YPR[2]/PI*180+180), num_send_1); 
 				UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
       #endif
       //    ***   Option 2: Pycharm frame YPR   ***   //
@@ -529,13 +643,20 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
       #endif
 			
 			      //    ***   Option 5: Save YPR on SD card  --NEW--  ***   //      
-      #ifdef SAVE_SD_CARD_NEW
+      #ifdef SAVE_YPR_SD_CARD
 				for(uint8_t k = 0; k < 3; k++){
 					uint16_t value = (uint16_t)(buf_YPR[k]/PI*180+180);
 					sd_card_buffer [j*NUMBER_OF_DATA_READS_IN_BT_PACKET + i*6 + 2 * k] 			= (uint8_t) value;
 					sd_card_buffer [j*NUMBER_OF_DATA_READS_IN_BT_PACKET + i*6 + 2 * k + 1] 	= (uint8_t) value >> 8;
 				}
 			#endif
+				
+			#ifdef SAVE_QUARTERNIONS_SD_CARD
+				for(uint8_t k = 0; k < 4; k++){
+					sd_card_buffer [j*NUMBER_OF_DATA_READS_IN_BT_PACKET + i*4 + k] = data[k];
+				}
+			#endif
+			
     }
   }
   
@@ -548,7 +669,7 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
     sprintf(path, "MET_%d.TXT", file_nummer);
     f_open(&myFILE, path, FA_OPEN_APPEND | FA_WRITE); 
     for(int i = 0; i < SIZE_SD_CARD_READ_BUF; i++){
-      f_printf(&myFILE, "%d,%d,%d,%d,%d\n", systemtick, sensor_number, (uint16_t)(sd_card_buffer[i][0]), (uint16_t)(sd_card_buffer[i][1]), (uint16_t)(sd_card_buffer[i][2]));
+      f_printf(&myFILE, "%d,%d,%d,%d,%d\n", timestamp, sensor_number, (uint16_t)(sd_card_buffer[i][0]), (uint16_t)(sd_card_buffer[i][1]), (uint16_t)(sd_card_buffer[i][2]));
     }
     f_close(&myFILE);
     HAL_GPIO_TogglePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin);   
@@ -556,9 +677,26 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
 		
 		
   //    ***   Option 5: Save YPR on SD card  --NEW-- 	***   //      
-  #ifdef SAVE_SD_CARD_NEW
-		SD_CARD_COM_save_data(systemtick, sensor_number, sd_card_buffer);
+  #ifdef SAVE_YPR_SD_CARD
+    //char path [25];
+    //sprintf(path, "MET_%d.TXT", file_nummer);
+    //f_open(&myFILE, path, FA_OPEN_APPEND | FA_WRITE); 
+		SD_CARD_COM_save_data(pakket_send_nr, timestamp, sensor_number, sd_card_buffer);
+    /*
+		for(int i = 0; i < SIZE_SD_CARD_READ_BUF; i++){
+			SD_CARD_COM_save_data(timestamp, sensor_number, &sd_card_buffer);
+      f_printf(&myFILE, "%d,%d,%d,%d,%d\n", timestamp, sensor_number, (uint16_t)(sd_card_buffer[i][0]), (uint16_t)(sd_card_buffer[i][1]), (uint16_t)(sd_card_buffer[i][2]));
+    }
+		*/
+    //f_close(&myFILE);
   #endif
+	
+	
+	#ifdef SAVE_QUARTERNIONS_SD_CARD
+		SD_CARD_COM_save_data(pakket_send_nr, timestamp, sensor_number, sd_card_buffer);
+  #endif
+	
+	
   
 }
 
@@ -678,8 +816,8 @@ static void MX_I2C1_Init(void)
   * @param None
   * @retval None
   */
-static void MX_SDMMC1_SD_Init(void)
-{
+//static void MX_SDMMC1_SD_Init(void)
+//{
 
   /* USER CODE BEGIN SDMMC1_Init 0 */
 
@@ -688,18 +826,18 @@ static void MX_SDMMC1_SD_Init(void)
   /* USER CODE BEGIN SDMMC1_Init 1 */
 
   /* USER CODE END SDMMC1_Init 1 */
-  hsd1.Instance = SDMMC1;
+  /*hsd1.Instance = SDMMC1;
   hsd1.Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
   hsd1.Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
   hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
   hsd1.Init.ClockDiv = 16;
   hsd1.Init.TranceiverPresent = SDMMC_TRANSCEIVER_NOT_PRESENT;
-  /* USER CODE BEGIN SDMMC1_Init 2 */
+  *//* USER CODE BEGIN SDMMC1_Init 2 */
 
   /* USER CODE END SDMMC1_Init 2 */
 
-}
+//}
 
 /**
   * @brief TIM2 Initialization Function
@@ -775,14 +913,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
   HAL_GPIO_TogglePin(LED_GOOD_GPIO_Port, LED_GOOD_Pin);
 	HAL_GPIO_WritePin(LED_ERROR_GPIO_Port, LED_ERROR_Pin, GPIO_PIN_RESET);
 	
+	if(SD_CARD_COM_get_status()){
+		if(SD_CARD_available() == 0){
+			SD_CARD_COM_set_status(0);
+			USB_COM_print_ln("SD card is removed");
+		}
+	}
+	/*
+	for(uint8_t i = 0; i < 6; i++){
+		if(imu_array[i]->measuring)	IOExpander_toggle(&hi2c1, I2C_ADDRESS_IC5, i);
+		//else 												IOExpander_clear(&hi2c1, I2C_ADDRESS_IC5, i);
+	}*/
 	
-	//char string [100];
-	//sprintf(string, "num_send_1: %i | num_send_2: %i \n", num_send_1, num_send_2);
-	//HAL_UART_Transmit(&huart5, (uint8_t *)string, strlen(string), 25);
+	IMU_sync_handler(&imu_1, *imu_array);
 	
-  //char string [100];
-  //sprintf(string, "Busy\n"); 
-  //HAL_UART_Transmit_IT(&huart5, (uint8_t *)string, strlen(string));
+	// HIER NOG IETS VOORZIEN, BAT SP UITMETEN EN WAARSCHUWEN
+	
 }
 
 /********************************************************************************************************/
@@ -802,6 +948,16 @@ void IOExpander_set(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io){
   gpio_buf_IC5 |= 1 << io;
   IOExpander_update(hi2c, address, gpio_buf_IC5);
 }
+
+uint8_t IOExpander_getstate(uint8_t io){
+	return ((gpio_buf_IC5 >> io) & 0x01);
+}
+
+void IOExpander_toggle(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io){
+  if(IOExpander_getstate(io)) 	IOExpander_clear(hi2c, address, io);
+	else													IOExpander_set(hi2c, address, io);
+}
+
 
 void IOExpander_clear(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io){
   gpio_buf_IC5 &= 0 << io;

@@ -9,10 +9,11 @@
 
 #define PACKETSIZE                      42
 #define MAX_BUFFER_SIZE                 10      //  Determine number of sensor read outs before sending
-#define DEFAULT_SAMPLING_FREQ           25
+#define DEFAULT_SAMPLING_FREQ           100
 #define IMU_SAMPLING_FREQ               100
 #define DEFAULT_PACK_NRS_BEFORE_SEND    IMU_SAMPLING_FREQ/DEFAULT_SAMPLING_FREQ
 #define THRESHOLD_MIN_BAT_VOLTAGE       3.5
+#define STARTUP_TIMEOUT                 30000   //  In milliseconds
 
 // ================================================================
 // ===          Define Bluetooth communication baudrate         ===
@@ -33,7 +34,7 @@
 // ================================================================
 
     // If external clock 19.2MHz is available
-//#define MPU_EXTERNAL_CLOCK
+#define MPU_EXTERNAL_CLOCK
 
 // ================================================================
 // ===                    Define MCU pins                       ===
@@ -54,7 +55,7 @@
 #define WAKE_UP_PIN         A3
 
 
-enum Sensor_Reader_State{SLEEP, STARTUP, CALIBRATION, IDLE, SYNC, RUNNING, CHARGING, BATTERY_LOW};
+enum Sensor_Reader_State{SLEEP, STARTUP, WAIT_FOR_CONNECTION, CALIBRATION, IDLE, SYNC, RUNNING, CHARGING, BATTERY_LOW};
 
 //#define DEBUG
 

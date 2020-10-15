@@ -104,6 +104,10 @@ void BLUETOOTH::updateBaudrate(uint8_t baudrate_index){
       }
       i++;
     }
+  
+    //Serial.flush();
+    //Serial.begin(baudrate_array[current_baud]);
+    //Serial.write(current_baud);
     
     delay(10);  
 
@@ -135,6 +139,16 @@ uint8_t BLUETOOTH::getUARTBaudrate(){
     return rsv_msg[5];
   }
   else return 0xFF;
+
+/*
+    Serial.write(Serial.read());
+    Serial.write(Serial.read());
+    Serial.write(Serial.read());
+    Serial.write(Serial.read());
+    Serial.write(Serial.read());
+    Serial.write(Serial.read());
+    return 0xFF;
+*/
 }
 
 uint8_t BLUETOOTH::setUARTBaudrate(uint8_t baudrate_index){
@@ -178,7 +192,7 @@ void BLUETOOTH::transmitData(uint8_t len, uint8_t *data){
     transmitFrame(CMD_DATA_REQ, len, data);
 }
 
-void BLUETOOTH::transmitFrame(uint8_t cmd, uint16_t len, uint8_t * data){
+void BLUETOOTH::transmitFrame(uint8_t cmd, uint16_t len, uint8_t *data){
     uint8_t tx_buffer [len + 4];
     tx_buffer [0] = 0x02;
     tx_buffer [1] = cmd;
@@ -234,12 +248,18 @@ bool BLUETOOTH::receiveFrame(uint8_t * rsvbuf){
             *(rsvbuf + 3) = Serial.read();
             uint16_t len = *(rsvbuf + 2) | (*(rsvbuf + 3) << 8);
 
+            //Serial.write(0x99);
+
             //  The incoming data
             for(uint8_t i = 0; i < len; i++){
                 *(rsvbuf + 4 + i) = Serial.read();
             }
 
             uint8_t total_len = len + 4;
+
+            //for(uint8_t i = 0; i < total_len; i++){
+            //    Serial.write(*(rsvbuf + i));
+            //}
            
             if(calculateCS(rsvbuf, total_len) == Serial.read()){
                 return 1;

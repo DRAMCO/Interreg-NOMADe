@@ -19,7 +19,10 @@ void BT_Initialize(void){
 }
 
 void BT_getMAC(UART_HandleTypeDef *huart){
-	// TO DO
+    //BT_getReq(huart, FS_BTMAC);
+    //EUSART1_Read_Block(12);
+		//for(uint8_t i = 0; i < 6; i++)
+    //    bt_mac [i] = rx_buffer [5 + i];  
 }
 
 
@@ -27,12 +30,18 @@ void BT_getMAC(UART_HandleTypeDef *huart){
 // ===            Connection management functions               ===
 // ================================================================
 
-void BT_connect(UART_HandleTypeDef *huart, uint8_t *mac){	
-		BT_transmit_CMD_Bytes(huart, CMD_CONNECT_REQ, 6, mac);
+void BT_connect(UART_HandleTypeDef *huart, uint8_t *mac){
+	uint8_t mac_reverse_buffer [6];
+	for(uint8_t i = 0; i < 6; i++)
+		mac_reverse_buffer [5 - i] = *(mac + i);
+	BT_transmit_CMD_Bytes(huart, CMD_CONNECT_REQ, 6, mac_reverse_buffer);
 }
 
+
+
+
 void BT_disconnect(UART_HandleTypeDef *huart){
-		BT_transmit_CMD(huart, CMD_DISCONNECT_REQ);
+	BT_transmit_CMD(huart, CMD_DISCONNECT_REQ);
 }
 
 
@@ -41,28 +50,28 @@ void BT_disconnect(UART_HandleTypeDef *huart){
 // ================================================================
 
 void BT_changeScanTiming(UART_HandleTypeDef *huart){
-    uint8_t buf [] = {RF_ScanTiming, 0x00};
-    BT_transmit_CMD_Bytes(huart, CMD_SET_REQ, 2, buf);
-    HAL_Delay(200);
+	uint8_t buf [] = {RF_ScanTiming, 0x00};
+	BT_transmit_CMD_Bytes(huart, CMD_SET_REQ, 2, buf);
+	HAL_Delay(200);
 }
 
 void BT_changeScanFactor(UART_HandleTypeDef *huart){
-    uint8_t buf [] = {RF_ScanFactor, 0x01};
-    BT_transmit_CMD_Bytes(huart, CMD_SET_REQ, 2, buf);
-    HAL_Delay(200);
+	uint8_t buf [] = {RF_ScanFactor, 0x01};
+	BT_transmit_CMD_Bytes(huart, CMD_SET_REQ, 2, buf);
+	HAL_Delay(200);
 }
 
 void BT_startScanning(UART_HandleTypeDef *huart){
-    
-    uint8_t buf [] = {RF_BeaconFlags, 0x01};
-    BT_transmit_CMD_Bytes(huart, CMD_SET_REQ, 2, buf);
-    HAL_Delay(200);
-
-    BT_transmit_CMD(huart, CMD_SCANSTART_REQ);
+	/*
+	uint8_t buf [] = {RF_BeaconFlags, 0x01};
+	BT_transmit_CMD_Bytes(huart, CMD_SET_REQ, 2, buf);
+	HAL_Delay(200);
+	*/
+	BT_transmit_CMD(huart, CMD_SCANSTART_REQ);
 }
 
 void BT_stopScanning(UART_HandleTypeDef *huart){
-    BT_transmit_CMD(huart, CMD_SCANSTOP_REQ);
+	BT_transmit_CMD(huart, CMD_SCANSTOP_REQ);
 }
 
 
@@ -150,7 +159,51 @@ void BT_transmit_CMD(UART_HandleTypeDef *huart, uint8_t cmd){
 // ================================================================
 // ===              Receive BT module messages                  ===
 // ================================================================
+/*
+uint8_t BT_receiveFrame_TimeOut(uint8_t * rsvbuf, uint16_t timeout){
+    uint32_t begin_time = HAL_GetTick();
+    while(!BT_receiveFrame(rsvbuf)){
+        if((HAL_GetTick() - begin_time) > timeout){
+            return 0;
+            break;
+        }
+    }
+    return 1;
+}
 
+uint8_t BT_receiveFrame(uint8_t * rsvbuf){
+	
+	
+    if(Serial.available() > 0){
+        if(Serial.read() == 0x02){
+            *(rsvbuf + 0) = 0x02;
+            *(rsvbuf + 1) = Serial.read();
+            *(rsvbuf + 2) = Serial.read();
+            *(rsvbuf + 3) = Serial.read();
+            uint16_t len = *(rsvbuf + 2) | (*(rsvbuf + 3) << 8);
+
+            //Serial.write(0x99);
+
+            //  The incoming data
+            for(uint8_t i = 0; i < len; i++){
+                *(rsvbuf + 4 + i) = Serial.read();
+            }
+
+            uint8_t total_len = len + 4;
+
+            //for(uint8_t i = 0; i < total_len; i++){
+            //    Serial.write(*(rsvbuf + i));
+            //}
+           
+            if(calculateCS(rsvbuf, total_len) == Serial.read()){
+                return 1;
+            }
+        }
+    }   
+    return 0;
+		
+}
+*/
 
 // ================================================================
 // ===                      UART functions                      ===

@@ -22,9 +22,6 @@
  */
 #include "uart_com.h"
 
-static void convert_to_hex_str(char* str, uint8_t* val, size_t val_count);
-
-
 void UART_COM_write(UART_HandleTypeDef *huart, uint8_t *buf, uint16_t len){	
 	for(int i = 0; i < len; i++){
 		UART_Write(huart, *(buf + i));
@@ -38,51 +35,41 @@ uint8_t UART_COM_read(UART_HandleTypeDef *huart){
 
 
 void UART_COM_print(UART_HandleTypeDef *huart, const char* str){
-    int i = 0;
-    for(i = 0; str[i]!='\0' ; i++) { }
-		uint8_t buffer [i];
-		for(int j = 0; j < i; j++){
-			buffer [j] = (uint8_t)*(str + j);
-		}
-		UART_COM_write(huart, buffer, i);
+	int i = 0;
+	for(i = 0; str[i]!='\0' ; i++) { }
+	uint8_t buffer [i];
+	for(int j = 0; j < i; j++){
+		buffer [j] = (uint8_t)*(str + j);
+	}
+	UART_COM_write(huart, buffer, i);
 }
 
 
 void UART_COM_print_ln(UART_HandleTypeDef *huart, const char* str){
-    int i = 0;
-    for(i = 0; str[i]!='\0' ; i++) {}
-		uint8_t buffer [i+1];
-		for(int j = 0; j < i; j++){
-			buffer [j] = (uint8_t)*(str + j);
-		}
-		buffer[i] = 0x0A;
-		UART_COM_write(huart, buffer, i+1);
-}
-
-
-//	TO DO: rewrite this function, causing HardFault Interrupt now
-void UART_COM_print_buffer_hex(UART_HandleTypeDef *huart, uint8_t *buf, uint8_t len){
-	UART_COM_print(huart, "Buffer: ");
-	
-	char string [200];
-	
-	convert_to_hex_str(string, buf, len);
-	UART_COM_write(huart, (uint8_t *)string, 3*len + 1);
-
-}
-
-static char hex[] = "0123456789ABCDEF"; 
-void convert_to_hex_str(char* str, uint8_t* val, size_t val_count)
-{
-	for (size_t i = 0; i < val_count; i++)
-	{
-		str[(i * 3) + 0] = hex[((val[i] & 0xF0) >> 4)];
-		str[(i * 3) + 1] = hex[((val[i] & 0x0F) >> 0)];
-		str[(i * 3) + 2] = 0x20;
+	int i = 0;
+	for(i = 0; str[i]!='\0' ; i++) {}
+	uint8_t buffer [i+1];
+	for(int j = 0; j < i; j++){
+		buffer [j] = (uint8_t)*(str + j);
 	}
+	buffer[i] = 0x0A;
+	UART_COM_write(huart, buffer, i+1);
 }
 
 
+void UART_COM_print_buffer_hex(UART_HandleTypeDef *huart, uint8_t *array, uint8_t len){
+	uint8_t buffer_len = 3*len + 1;
+	char buffer [buffer_len];
+	for (uint8_t i = 0; i < len; i++){
+		uint8_t nib1 = (array[i] >> 4) & 0x0F;
+		uint8_t nib2 = (array[i] >> 0) & 0x0F;
+		buffer[i*3+0] = nib1  < 0xA ? '0' + nib1  : 'A' + nib1  - 0xA;
+		buffer[i*3+1] = nib2  < 0xA ? '0' + nib2  : 'A' + nib2  - 0xA;
+		buffer[i*3+2] = 0x20;
+	}
+	buffer[buffer_len - 1] = 0x0A;
+	UART_COM_write(huart, (uint8_t *)buffer, buffer_len);
+}
 
 
 
