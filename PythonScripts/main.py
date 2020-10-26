@@ -23,7 +23,7 @@
 from functions import *
 
 # --------------------SETTINGS------------------#
-measurement_number = 52
+measurement_number = 1
 sampling_frequency = 100
 # ----------------------------------------------#
 

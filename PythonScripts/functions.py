@@ -130,6 +130,8 @@ def convert_sample_list_ypr(sample_list, new_sample_list, connected_sensors):
             for i in range(clms):
                 convert_quaternion_sample_to_ypr(sens_samples[i], sens_samples_ypr[i])
             new_sample_list.append(np.transpose(sens_samples_ypr).tolist())
+        else:
+            new_sample_list.append([])
 
 
 def convert_sample_list_ypr_degrees(ypr_sample_list, connected_sensors):
@@ -164,6 +166,3 @@ def convert_quaternion_sample_to_ypr(data, new_data):
             new_data[1] = m.pi - new_data[1]
         else:
             new_data[1] = -m.pi - new_data[1]
-
-
-
