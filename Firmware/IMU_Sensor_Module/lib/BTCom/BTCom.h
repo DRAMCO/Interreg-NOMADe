@@ -69,26 +69,22 @@ extern bool sync_executed;
 extern bool synchronisation;
 extern bool battery_low_state;
 
-extern uint8_t mpu_read_counter;
-extern uint8_t buffer_counter;
-extern uint16_t packet_send_number;
-
-extern uint8_t pack_nr_before_send;
 extern uint32_t sync_time;
 extern uint32_t startup_time;
 
 class BTCOM {
     public:
-        BTCOM(BLUETOOTH * bt, BMS * bms, MPU6050 * mpu);
+        BTCOM(BLUETOOTH *bt, BMS *bms, MPU6050 *mpu, Variables *counters);
 
+        void incoming_data_handler();
         void communication_management(uint8_t *rsv_buffer);
         void rsv_msg_handler(uint8_t *rsv_buffer);
 
-
     private:
-        BLUETOOTH * bt;
-        BMS * bms;
-        MPU6050 * mpu;
+        BLUETOOTH *bt;
+        BMS *bms;
+        MPU6050 *mpu;
+        Variables *counters;
 };
 
 #endif

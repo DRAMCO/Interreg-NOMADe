@@ -2,10 +2,45 @@
 #include "Arduino.h"
 #include "BTCom.h"
 
-BTCOM::BTCOM(BLUETOOTH * bt, BMS * bms, MPU6050 * mpu){
+BTCOM::BTCOM(BLUETOOTH *bt, BMS *bms, MPU6050 *mpu, Variables *counters){
     this->bt = bt;
     this->bms = bms;
     this->mpu = mpu;
+    this->counters = counters;
+}
+
+
+void BTCOM::incoming_data_handler(){
+  if(Serial.available() > 0){
+    uint8_t rsvbuf [100];
+    if(Serial.read() == 0x02){
+      rsvbuf [0] = 0x02;
+      delay(1);
+      rsvbuf [1] = Serial.read();
+      rsvbuf [2] = Serial.read();
+      rsvbuf [3] = Serial.read();
+      uint16_t len = rsvbuf [2] | (rsvbuf [3] << 8);
+
+      delay(1);
+
+      //  The incoming data
+      if(len < 255){
+        uint8_t i;
+        for(i = 0; i < len; i++){
+          if(Serial.available() > 0){
+            rsvbuf [4 + i] = Serial.read();
+          }
+          else break;
+        }
+        if(i == len){
+          uint16_t total_len = len + 4;
+          if(bt->calculateCS(rsvbuf, total_len) == Serial.read()){
+            communication_management(rsvbuf);
+          }
+        }
+      }
+    }
+  } 
 }
 
 void BTCOM::communication_management(uint8_t *rsv_buffer){
@@ -169,7 +204,7 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
 
         digitalWrite(IND_LED, LOW);
 
-        packet_send_number = 0;
+        counters->packet_send_counter = 0;
 
         uint8_t value = (millis() - sync_time + 1000)/1000;
         uint32_t starttime = sync_time + (1000 * value);
@@ -200,7 +235,7 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
 
         digitalWrite(IND_LED, LOW);
 
-        packet_send_number = 0;
+        packet_send_counter = 0;
 
         uint8_t value = (millis() - sync_time + 1000)/1000;
         uint32_t starttime = sync_time + (1000 * value);
@@ -220,40 +255,43 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
       mpu->setDMPEnabled(0);
       bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_MEASUREMENTS_STOPPED);
       digitalWrite(IND_LED, LOW);
-      mpu_read_counter = 0;
-      buffer_counter = 0;
+
       sync_executed = 0;
-      packet_send_number = 0;
+
+      counters->mpu_read_counter = 0;
+      counters->buffer_counter = 0;
+      counters->packet_send_counter = 0;
+
       state = IDLE;
     } break;
 
     case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_10HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 10;
+      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 10;
         //  Send msg, sampling frequency changed
       bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
     } break;
 
     case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_20HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 20;
+      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 20;
         //  Send msg, sampling frequency changed
       bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
     } break;
 
     case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_25HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 25;
+      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 25;
         //  Send msg, sampling frequency changed
       bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
     } break;
 
     case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_50HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 50;
+      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 50;
         //  Send msg, sampling frequency changed
       bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
     }
     break;
 
     case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_100HZ:{
-      pack_nr_before_send = IMU_SAMPLING_FREQ / 100;
+      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 100;
         //  Send msg, sampling frequency changed
       bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED);
     } break;

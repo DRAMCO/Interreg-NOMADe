@@ -15,6 +15,10 @@
 #define THRESHOLD_MIN_BAT_VOLTAGE       3.5
 #define STARTUP_TIMEOUT                 30000   //  In milliseconds
 
+#define SAMPLE_DATA_LEN_ALL             20
+#define SAMPLE_DATA_LEN_QUATERNIONS     8
+#define SAMPLE_DATA_LEN                 SAMPLE_DATA_LEN_QUATERNIONS
+
 // ================================================================
 // ===          Define Bluetooth communication baudrate         ===
 // ================================================================
@@ -58,5 +62,15 @@
 enum Sensor_Reader_State{SLEEP, STARTUP, WAIT_FOR_CONNECTION, CALIBRATION, IDLE, SYNC, RUNNING, CHARGING, BATTERY_LOW};
 
 //#define DEBUG
+
+
+
+struct Variables {
+  uint8_t buffer_counter = 0;                                   //  Global variable (number of sensor readouts before sending)
+  uint8_t packet_number_counter = 1;                            //  Send packet after counter is same as PACK_NRS_BEFORE_SEND
+  uint8_t mpu_read_counter = 0;                                 //  Counter for the indication led during RUNNING MODE
+  uint8_t pack_nr_before_send = DEFAULT_PACK_NRS_BEFORE_SEND;   //  Counter for lower sample rates, ignoring samples
+  uint16_t packet_send_counter = 0;                             //  Counter increments during RUNNING MODE after each BLE MSG
+};
 
 #endif
