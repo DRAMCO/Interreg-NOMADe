@@ -227,7 +227,7 @@ class DMP{
         uint16_t getFIFOPacketSize();
 
     private:
-        MPU6050 * mpu;
+        MPU6050 *mpu;
         uint8_t *dmpPacketBuffer;
         uint16_t dmpPacketSize;
 

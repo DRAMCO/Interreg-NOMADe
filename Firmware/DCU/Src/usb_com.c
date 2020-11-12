@@ -66,9 +66,12 @@ void USB_COM_show_menu(void){
 	USB_COM_print_ln("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
 	USB_COM_print_ln("Command \"c\": Calibrate all connected modules");
 	USB_COM_print_ln("Command \"s\": Start synchronization");
-	USB_COM_print_ln("Command \"r\": Run the measurement");
+	USB_COM_print_ln("Command \"r\": Start the measurement");
+	USB_COM_print_ln("Command \"t\": Start the measurement without synchronisation");
 	USB_COM_print_ln("Command \"e\": End the measurement");
 	USB_COM_print_ln("Command \"f\": Change sampling frequency");
+	USB_COM_print_ln("Command \"k\": Change output data format to only Quaternions data");
+	USB_COM_print_ln("Command \"l\": Change output data format to Quaternions + Gyroscope + Accelerometer data");
 	USB_COM_print_ln("########################################################################\n\n");
 }
 
@@ -83,8 +86,9 @@ void USB_COM_print_ln(const char* str){
 }
 
 void USB_COM_print_value_ln(const char* str, uint32_t value){
-	char char_array [100];
-	sprintf(char_array, str, value); 
+	UART_COM_print(&huart5, str);
+	char char_array [20];
+	sprintf(char_array, " %d\n", value); 
   UART_COM_write(&huart5, (uint8_t *)char_array, strlen(char_array));
 }
 
@@ -191,6 +195,7 @@ void USB_COM_check_rx_buffer(void){
 			
 			
 			
+			
 			case 0x63:{
 				for(uint8_t i = 0; i < NUMBER_OF_SENSOR_SLOTS; i++){
 					if(imu_array[i]->connected)	IMU_start_calibration(imu_array[i]);
@@ -277,6 +282,38 @@ void USB_COM_check_rx_buffer(void){
 					USB_COM_print_ln("Give number: "); 
 				}
 			} break;
+			
+			
+			case 0x6B:{
+				for(uint8_t i = 0; i < 6; i++){
+					if(imu_array[i]->connected){	
+						IMU_change_dataformat(imu_array[i], DATA_FORMAT_1);
+					}
+				}				
+			} break;
+				
+			case 0x6C:{
+				for(uint8_t i = 0; i < 6; i++){
+					if(imu_array[i]->connected){	
+						IMU_change_dataformat(imu_array[i], DATA_FORMAT_2);
+					}
+				}
+			} break;
+			
+			case 0x74:{
+				if(SD_CARD_COM_get_status()){
+					USB_COM_print_ln("Start measurement");
+					SD_CARD_COM_open_file();
+					for(uint8_t i = 0; i < NUMBER_OF_SENSOR_SLOTS; i++){
+						if(imu_array[i]->connected){
+							IMU_start_measurements_without_sync(imu_array[i]);
+						}
+					}
+				}
+				else	USB_COM_print_ln("No available sd card found");
+			} break;
+			
+			
 			
 			case 0x0A:{
 				// It's just an enter (captered)

@@ -4,16 +4,17 @@
 #include "Arduino.h"
 #include "Config.h"
 #include "DMP.h"
-#include "Bluetooth.h"
+#include "LED.h"
 
 extern uint8_t state;
+extern uint8_t dataformat;
 extern struct Variables counters;
 
 
 class IMU {
     public:
 
-        IMU(DMP *dmp, MPU6050 *mpu, Variables *counters);
+        IMU(DMP *dmp, MPU6050 *mpu, Variables *counters, LED *led);
 
         void powerup(void);
         void powerdown(void);
@@ -27,6 +28,7 @@ class IMU {
         MPU6050 *mpu;
         DMP *dmp;
         Variables *counters;
+        LED *led;
         uint8_t data_buffer[255];
 };
 

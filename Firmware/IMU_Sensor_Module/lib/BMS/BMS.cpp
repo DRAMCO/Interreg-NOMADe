@@ -2,7 +2,6 @@
 #include "BMS.h"
 
 BMS::BMS(){
-
 }
 
 void BMS::init(){

@@ -1,4 +1,3 @@
-
 #ifndef _BMS_H_
 #define _BMS_H_
 

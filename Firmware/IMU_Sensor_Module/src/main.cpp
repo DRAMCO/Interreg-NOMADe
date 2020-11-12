@@ -13,7 +13,7 @@
  *         File: main.cpp
  *      Created: 2020-02-27
  *       Author: Jarne Van Mulders
- *      Version: V3.0
+ *      Version: V3.1
  *
  *  Description: Firmware IMU sensor module for the NOMADe project
  *
@@ -26,7 +26,6 @@
 #include "BTCom.h"
 #include <avr/wdt.h>
 #include "IMU.h"
-#include "DMP.h"
 
 // ================================================================
 // ===                          TO DO                           ===
@@ -49,11 +48,12 @@
 // ================================================================
 
 Variables counters;
+LED led(&counters);
 MPU6050 mpu;
 DMP dmp(&mpu);
 BMS bms;
 BLUETOOTH bt;
-IMU imu(&dmp, &mpu, &counters);
+IMU imu(&dmp, &mpu, &counters, &led);
 BTCOM btcom(&bt, &bms, &mpu, &counters);
 
 // ================================================================
@@ -61,6 +61,7 @@ BTCOM btcom(&bt, &bms, &mpu, &counters);
 // ================================================================
 
 uint8_t state = SLEEP;
+uint8_t dataformat = QUAT;
 
 // ================================================================
 // ===              Global buffers and variables                ===
@@ -81,7 +82,6 @@ bool synchronisation = 0;
 bool battery_low_state = 0;
 bool interruptIMU = false;
 
-
 // ================================================================
 // ===                  STATIC VOID FUNCTIONS                   ===
 // ================================================================
@@ -89,12 +89,6 @@ bool interruptIMU = false;
 static void state_machine();
 static void processIMUData(void);
 static void shutdown_periferals();
-
-static void LED_blink(uint8_t num, uint16_t wait_time);
-static void LED_blink(uint8_t num, uint16_t on_time, uint16_t off_time);
-static void LED_blink_Running();
-static void IND_LED_On();
-static void IND_LED_Off();
 
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
@@ -169,7 +163,7 @@ void loop(){
 
     //  Check battery voltage
   if(state != SLEEP && !bms.batStatus())    { state = BATTERY_LOW;    battery_low_state = 1;  }
-  
+
     //  Check if battery is charging
   if(bms.batCharging())                     { state = CHARGING;       battery_low_state = 0;  }
 }
@@ -198,7 +192,7 @@ void state_machine(){
       if(!digitalRead(BUTTON_INT)){
         if(battery_low_state){ 
           state = SLEEP;  
-          LED_blink(3, 100);  
+          led.blink(3, 100);  
         }
         else{
           startup_time = millis();
@@ -214,7 +208,7 @@ void state_machine(){
     case STARTUP:{
       status_periferals = 1;
       wdt_enable(WDTO_8S);
-      LED_blink(3, 100);
+      led.blink(3, 100);
       delay(10);
       imu.powerup();
       delay(10);
@@ -236,7 +230,7 @@ void state_machine(){
         state = IDLE;
       }
       else{
-        LED_blink(1, 200);
+        led.blink(1, 200);
         if(millis() > startup_time + STARTUP_TIMEOUT) state = SLEEP;
       }
     } break;
@@ -257,11 +251,11 @@ void state_machine(){
           synchronisation = 1;
         }
 
-        delay(10);
-        LED_blink(1, 50, 100);
+        delay(1);
+        led.blink(1, 50, 100);
       }
       else{
-        LED_blink(1, 200);
+        led.blink(1, 200);
         state = WAIT_FOR_CONNECTION;
       }
     }
@@ -312,18 +306,18 @@ void state_machine(){
     break;
 
 
-    /***    Running State   ****
+    /***    Running State                 ****
      * Wait for MPU6050 Intterupts
      * Process the data
      * Send the data through BLE
      * Blink the LED during measurements
-    ****                        ***/
+    ****                                  ***/
     case RUNNING:{
       if(bt.isConnected()){
         if(interruptIMU){
           interruptIMU = false;
           processIMUData();
-          LED_blink_Running();
+          led.blink_Running();
         }
       }
       else state = SLEEP;
@@ -331,16 +325,16 @@ void state_machine(){
     break;
 
 
-    /***    Charging State        ****
+    /***    Charging State                  ****
      * Shutdown everthing: IMU, BT module
      * Go to SLEEP and charge the battery
-    ****                          ***/
+    ****                                    ***/
     case CHARGING:{
-      IND_LED_On();
+      led.on();
       if(status_periferals) shutdown_periferals();
       if(!bms.batCharging()){
         state = SLEEP;
-        IND_LED_Off();
+        led.off();
       }
     }
     break;
@@ -351,10 +345,10 @@ void state_machine(){
      * Go to SLEEP
     ****                        ***/
     case BATTERY_LOW:{
-      LED_blink(6, 100);
       if(bt.isConnected()){
         bt.transmitFrameMsg(IMU_SENSOR_MODULE_IND_BATTERY_LOW_ERROR);
       }
+      led.blink(6, 100);
       state = SLEEP;
     }
     break;
@@ -373,59 +367,13 @@ void processIMUData(){
   uint8_t len = 0;
   uint8_t* data_send_buffer = imu.getDataBuffer();
   if(imu.getIMUData(&len)){
-    *(data_send_buffer + 0) = IMU_SENSOR_MODULE_REQ_SEND_DATA;
+    switch(dataformat){
+      case QUAT:{               *(data_send_buffer + 0) = IMU_SENSOR_MODULE_RSP_SEND_DATA_F1;    } break;
+      case QUART_GYRO_ACC:{     *(data_send_buffer + 0) = IMU_SENSOR_MODULE_RSP_SEND_DATA_F2;    } break;
+    }
     bt.transmitData(len, data_send_buffer);
   }
 }
-
-
-void LED_blink(uint8_t num, uint16_t wait_time){
-  for(int i = 0; i < num; i++){
-    digitalWrite(IND_LED, HIGH);
-    delay(wait_time);
-    digitalWrite(IND_LED, LOW);
-    delay(wait_time);
-  }
-}
-
-uint8_t on_counter = 0;
-uint8_t off_counter = 0;
-
-void LED_blink(uint8_t num, uint16_t on_time, uint16_t off_time){
-  if(!digitalRead(IND_LED)){
-    off_counter++;
-    if(off_counter == off_time/10){
-      digitalWrite(IND_LED, HIGH);
-      off_counter = 0;
-    }
-  }
-  else{
-    on_counter++;
-    if(on_counter == on_time/10){
-      digitalWrite(IND_LED, LOW);
-      on_counter = 0;
-    }
-  }
-}
-
-void LED_blink_Running(){
-  counters.mpu_read_counter++;
-  if(counters.mpu_read_counter%50 == 0){
-    digitalWrite(IND_LED, !digitalRead(IND_LED));
-    counters.mpu_read_counter = 0;
-  }
-
-}
-
-void IND_LED_On(void){
-  digitalWrite(IND_LED, HIGH);
-}
-
-void IND_LED_Off(void){
-  digitalWrite(IND_LED, LOW);
-}
-
-
 
 
 void shutdown_periferals(void){
@@ -444,7 +392,7 @@ void shutdown_periferals(void){
   bt.sleep_mode();
   delay(10);
   Serial.flush();
-  LED_blink(2, 200);
+  led.blink(2, 200);
   wdt_disable();
 }
 

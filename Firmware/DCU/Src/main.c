@@ -13,7 +13,7 @@
  *         File: main.c
  *      Created: 2020-02-27
  *       Author: Jarne Van Mulders
- *      Version: V1.0
+ *      Version: V3.0
  *
  *  Description: Firmware IMU sensor module for the NOMADe project
  *
@@ -23,6 +23,7 @@
  
  //	Version	1: Test version + making init libraries
  // Version 2: Ringbuffers + USB COM communication and control possible
+ // Version 3: Add new dataformat (QUAT + GYRO + ACC)
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -55,8 +56,8 @@ UART_HandleTypeDef huart3;  //  FT312D -- TABLET
 UART_HandleTypeDef huart6;  //  BT2
 
 
-#define FIRST_SET_OF_MODULES
-//#define SECOND_SET_OF_MODULES
+//#define FIRST_SET_OF_MODULES
+#define SECOND_SET_OF_MODULES
 //#define THIRD_SET_OF_MODULES
 
 #ifdef FIRST_SET_OF_MODULES
@@ -88,7 +89,7 @@ imu_module *imu_array [] = {&imu_1, &imu_2, &imu_3, &imu_4, &imu_5, &imu_6};
 
 /* Read from ringbuffer ------------------------------------------------------*/
 typedef struct{
-	uint8_t rsvbuf [200];
+	uint8_t rsvbuf [255];
 	volatile uint8_t reading_frame;
 	volatile uint8_t header_readed;
 	volatile uint16_t len;
@@ -129,6 +130,7 @@ void BT_read_ringbuffer_pakket(UART_HandleTypeDef *huart, read_from_ringbuffer *
 /********Handlers**************/
 static void rsv_bt_packet_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu);
 static void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu);
+static void rsv_data_handler(uint8_t * buf, uint8_t sensor_number, uint8_t data_format);
 
 
 /**********IOExpander**********/
@@ -139,11 +141,6 @@ static void IOExpander_clearAll(I2C_HandleTypeDef *hi2c, uint8_t address);
 static void IOExpander_update(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t buf);
 static uint8_t IOExpander_getstate(uint8_t io);
 static void IOExpander_toggle(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io);
-
-
-/**********SD Card************/
-//static void SDCard_create_new_file(void);
-//static FRESULT SDCard_mount(void);
 
 
 /*********Calculations********/
@@ -349,6 +346,7 @@ void rsv_bt_packet_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 		case CMD_CHANNELOPEN_RSP:{
 				//  Channel open, data transmission possible
 				USB_COM_print_info(imu->name, "Channel open, data transmission possible");
+				//USB_COM_print_value_ln("Max payload size", rsvbuf [11]);
 		}
 		break;
 
@@ -447,8 +445,12 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 			imu->measuring = 1;
 		} break;
 		
-		case IMU_SENSOR_MODULE_REQ_SEND_DATA:{
-			convertBuffer(rsvbuf, imu->number);
+		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F1:{
+			rsv_data_handler(rsvbuf, imu->number, DATA_FORMAT_1);
+		} break;
+		
+		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F2:{
+			rsv_data_handler(rsvbuf, imu->number, DATA_FORMAT_2);
 		} break;
 		
 		case IMU_SENSOR_MODULE_IND_CALIBRATION_STARTED:{
@@ -478,6 +480,12 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 		case IMU_SENSOR_MODULE_IND_CANNOT_SYNC:{
 			USB_COM_print_info(imu->name, "Cannot be synchronised at this moment");
 		}	break;
+		
+		case IMU_SENSOR_MODULE_IND_DF_CHANGED:{
+			USB_COM_print_info(imu->name, "Dataformat changed");
+			if(*(rsvbuf + 12) == 1) USB_COM_print_info(imu->name, "Format 1 QUAT");
+			if(*(rsvbuf + 12) == 2) USB_COM_print_info(imu->name, "Format 2 QUAT + GYRO + ACC");
+		} break;
 			
 		case IMU_SENSOR_MODULE_IND_SYNC_DONE:{
 			//USB_COM_print_info(imu->name, "Synchronisation done");
@@ -693,12 +701,55 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
 	
 	
 	#ifdef SAVE_QUARTERNIONS_SD_CARD
-		SD_CARD_COM_save_data(pakket_send_nr, timestamp, sensor_number, sd_card_buffer);
+		SD_CARD_COM_save_data_q(pakket_send_nr, timestamp, sensor_number, sd_card_buffer);
   #endif
-	
-	
-  
 }
+
+int16_t sd_card_buffer [100];
+int16_t data [10];
+
+/********************************************************************************************************************/
+void rsv_data_handler(uint8_t * buf, uint8_t sensor_number, uint8_t data_format){
+	
+	uint16_t data_values;
+	uint32_t timestamp;
+	uint16_t pakket_send_nr;
+	
+	switch(data_format){
+		case DATA_FORMAT_1: {	data_values = 4;		} break;
+		case DATA_FORMAT_2: {	data_values = 10;		} break;
+	}
+	
+	//int16_t sd_card_buffer [NUMBER_OF_DATA_READS_IN_BT_PACKET * data_values];
+  
+  
+  for(uint8_t j = 0; j < NUMBER_OF_BT_PACKETS; j++){
+    uint16_t start_pos = PACKET_START_POS + 7; 
+		// 1e byte: 					command "IMU_SENSOR_MODULE_REQ_SEND_DATA"
+		// 2e & 3e byte:			packet_send_nr
+		// 3e 4e 5e 6e byte:	timestamp
+		
+		pakket_send_nr = buf[PACKET_START_POS + 1] | (buf[PACKET_START_POS + 2] << 8);
+		timestamp = buf[PACKET_START_POS + 3] | (buf[PACKET_START_POS + 4] << 8) | (buf[PACKET_START_POS + 5] << 16) | (buf[PACKET_START_POS + 6] << 24);
+		
+    for(int i = 0; i < NUMBER_OF_DATA_READS_IN_BT_PACKET; i++){
+      //int16_t data [data_values];
+			for(uint8_t g = 0; g < data_values; g++){
+				data[g] = ((buf[start_pos + g*2 + data_values*2 * i] << 8) | buf[start_pos + g*2 + 1 + data_values*2 * i]);
+			}
+
+			for(uint8_t k = 0; k < data_values; k++){
+				sd_card_buffer [j*NUMBER_OF_DATA_READS_IN_BT_PACKET + i*data_values + k] = data[k];
+			}
+    }
+  }
+	
+	switch(data_format){
+		case DATA_FORMAT_1: SD_CARD_COM_save_data_q(pakket_send_nr, timestamp, sensor_number, sd_card_buffer); 	break;
+		case DATA_FORMAT_2: SD_CARD_COM_save_data_qga(pakket_send_nr, timestamp, sensor_number, sd_card_buffer); 	break; //!!!!!!!!!!
+	}
+}
+/*****************************************************************************************************/
 
 
 

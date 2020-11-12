@@ -70,6 +70,10 @@ void IMU_start_measurements(imu_module *imu){
 	//BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_START_MEASUREMENTS);
 }
 
+void IMU_start_measurements_without_sync(imu_module *imu){
+	BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_START_MEASUREMENTS_WITHOUT_SYNC);
+}
+
 void IMU_stop_measurements(imu_module *imu){
 	BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_STOP_MEASUREMENTS);
 }
@@ -83,6 +87,10 @@ void IMU_sync_reset(void){
 	state = STATE00;
 }
 
+void IMU_change_dataformat(imu_module *imu, uint8_t df){
+	BT_transmitMsg_CMD_Data(imu->uart, IMU_SENSOR_MODULE_REQ_CHANGE_DF, 1, &df);
+}
+	
 void IMU_sync_handler(imu_module *imu, imu_module *imu_array){
 	
 	if(sync_enable){

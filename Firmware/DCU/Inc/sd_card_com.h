@@ -55,7 +55,8 @@ void SD_CARD_COM_close_file(void);
 /*-------------------------------------------------------------------------------------------------*/
 
 
-void SD_CARD_COM_save_data(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer);
+void SD_CARD_COM_save_data_q(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer);
+void SD_CARD_COM_save_data_qga(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer);
 /*-------------------------------------------------------------------------------------------------*/
 
 

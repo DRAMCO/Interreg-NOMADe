@@ -164,7 +164,7 @@ void SD_CARD_COM_save_data(uint16_t number, uint32_t systemtick, uint8_t sensor_
 */
 
 
-void SD_CARD_COM_save_data(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer){
+void SD_CARD_COM_save_data_q(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer){
 	HAL_GPIO_WritePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin, GPIO_PIN_SET);
 	for(uint8_t i = 0; i < SIZE_SD_CARD_READ_BUF; i++){
 		int16_t new_data [4];
@@ -172,6 +172,18 @@ void SD_CARD_COM_save_data(uint16_t number, uint32_t systemtick, uint8_t sensor_
 			new_data [j] = (int16_t)(*(sd_card_buffer + i*4 + j));
 		}
 		f_printf(&myFILE, "%d,%d,%d,%d,%d,%d,%d\n", sensor_number, number, systemtick, new_data [0], new_data [1], new_data [2], new_data [3]);
+	}
+	HAL_GPIO_WritePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin, GPIO_PIN_RESET);
+}
+
+void SD_CARD_COM_save_data_qga(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer){
+	HAL_GPIO_WritePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin, GPIO_PIN_SET);
+	for(uint8_t i = 0; i < SIZE_SD_CARD_READ_BUF; i++){
+		int16_t new_data [10];
+		for(uint8_t j = 0; j < 10; j++){
+			new_data [j] = (int16_t)(*(sd_card_buffer + i*10 + j));
+		}
+		f_printf(&myFILE, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", sensor_number, number, systemtick, new_data [0], new_data [1], new_data [2], new_data [3], new_data [4], new_data [5], new_data [6], new_data [7], new_data [8], new_data [9]);
 	}
 	HAL_GPIO_WritePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin, GPIO_PIN_RESET);
 }
