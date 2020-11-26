@@ -203,7 +203,7 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
         digitalWrite(IND_LED, LOW);
         counters->packet_send_counter = 0;
         mpu->setDMPEnabled(true);    //    Start IMU DMP
-        state = RUNNING;
+        state = INIT_MES;
       }
       else{
         bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_NEED_TO_CALIBRATE);
@@ -227,7 +227,7 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
         //if(starttime - millis() < 5000) while(millis() < starttime);
         
         mpu->setDMPEnabled(true);    //    Start IMU DMP
-        state = RUNNING;
+        state = INIT_MES;
       }
       else{
         if(!synchronisation){
@@ -255,7 +255,7 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
         while(millis() < starttime);
         
         mpu->setDMPEnabled(true);    //    Start IMU DMP
-        state = RUNNING;
+        state = INIT_MES;
       }
       else{
           //  Send msg, first need to callibrate.
@@ -277,34 +277,16 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
       state = IDLE;
     } break;
 
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_10HZ:{
-      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 10;
-        //  Send msg, sampling frequency changed
-      bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED, 1, &counters->pack_nr_before_send);
-    } break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_20HZ:{
-      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 20;
-        //  Send msg, sampling frequency changed
-      bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED, 1, &counters->pack_nr_before_send);
-    } break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_25HZ:{
-      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 25;
-        //  Send msg, sampling frequency changed
-      bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED, 1, &counters->pack_nr_before_send);
-    } break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_50HZ:{
-      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 50;
-        //  Send msg, sampling frequency changed
-      bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED, 1, &counters->pack_nr_before_send);
-    } break;
-
-    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_100HZ:{
-      counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 100;
-        //  Send msg, sampling frequency changed
-      bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED, 1, &counters->pack_nr_before_send);
+    case IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_CHANGED:{
+      uint8_t sample_freq = *(rsv_buffer + 12);
+      switch(sample_freq){
+        case DATA_FORMAT_1: { counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 10;   } break;
+        case DATA_FORMAT_2: { counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 20;   } break;
+        case DATA_FORMAT_3: { counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 25;   } break;
+        case DATA_FORMAT_4: { counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 50;   } break;
+        case DATA_FORMAT_5: { counters->pack_nr_before_send = IMU_SAMPLING_FREQ / 100;  } break;
+      }
+      bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED, 1, &sample_freq);
     } break;
 
     case IMU_SENSOR_MODULE_REQ_GO_TO_SLEEP:{
@@ -326,10 +308,19 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
       uint8_t format_nr = *(rsv_buffer + 12);
       switch(format_nr){
         case DATA_FORMAT_1: { dataformat = QUAT;            } break;
-        case DATA_FORMAT_2: { dataformat = QUART_GYRO_ACC;  } break;
+        case DATA_FORMAT_2: { dataformat = GYRO;            } break;
+        case DATA_FORMAT_3: { dataformat = ACC;             } break;
+        case DATA_FORMAT_4: { dataformat = GYRO_ACC;        } break;
+        case DATA_FORMAT_5: { dataformat = QUART_GYRO_ACC;  } break;
       }
       bt->transmitFrameMsg(IMU_SENSOR_MODULE_IND_DF_CHANGED, 1, &format_nr);
     } break;
+
+    case IMU_SENSOR_MODULE_REQ_SW_VERSION:{
+      uint8_t software_version = SW_VERSION;
+      bt->transmitFrameMsg(IMU_SENSOR_MODULE_RSP_SW_VERSION, 1, &software_version);
+    } break;
+
 
     default:{
     } break;

@@ -4,11 +4,23 @@
 #include "Arduino.h"
 
 // ================================================================
+// ===                    Software version                      ===
+// ================================================================
+
+#define SW_VERSION  SW_V32
+
+#define SW_V10  10
+#define SW_V20  20
+#define SW_V30  30
+#define SW_V31  31
+#define SW_V32  32
+
+// ================================================================
 // ===                    Define constants                      ===
 // ================================================================
 
 #define PACKETSIZE                      42
-#define MAX_BUFFER_SIZE                 10      //  Determine number of sensor read outs before sending
+#define MAX_BUFFER_SIZE                 10      //  Number of samples in one BLE packet
 #define DEFAULT_SAMPLING_FREQ           100
 #define IMU_SAMPLING_FREQ               100
 #define DEFAULT_PACK_NRS_BEFORE_SEND    IMU_SAMPLING_FREQ/DEFAULT_SAMPLING_FREQ
@@ -59,8 +71,8 @@
 #define WAKE_UP_PIN         A3
 
 
-enum Sensor_Reader_State{SLEEP, STARTUP, WAIT_FOR_CONNECTION, CALIBRATION, IDLE, SYNC, RUNNING, CHARGING, BATTERY_LOW};
-enum Data_Format_State{QUAT, QUART_GYRO_ACC};
+enum Sensor_Reader_State{SLEEP, STARTUP, WAIT_FOR_CONNECTION, CALIBRATION, IDLE, SYNC, INIT_MES, RUNNING, CHARGING, BATTERY_LOW};
+enum Data_Format_State{QUAT, GYRO, ACC, GYRO_ACC, QUART_GYRO_ACC};
 
 //#define DEBUG
 

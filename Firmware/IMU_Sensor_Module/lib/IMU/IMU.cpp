@@ -18,14 +18,18 @@ void IMU::powerup(void){
   digitalWrite(MPU_ON, HIGH);
 }
 
-uint8_t IMU::getIMUData(uint8_t *len){
-  uint8_t return_val = 0;
-  uint8_t sample_data_len = 0;
-
+void IMU::initMeasurement(){
   switch(dataformat){
-    case QUAT:{               sample_data_len = SAMPLE_DATA_LEN_QUATERNIONS;  } break;  //  Only QUAT sended
-    case QUART_GYRO_ACC:{     sample_data_len = SAMPLE_DATA_LEN_ALL;          } break;  //  All data is sended QUAT + GYRO + ACC
+    case QUAT:{               pstruc_start = 0;   pstruc_stop = SAMPLE_DATA_LEN_QUATERNIONS;  } break;  //  Only QUAT sended
+    case GYRO:{               pstruc_start = 8;   pstruc_stop = 14;                           } break;  //  Only GYRO sended
+    case ACC:{                pstruc_start = 14;  pstruc_stop = SAMPLE_DATA_LEN_ALL;          } break;  //  Only ACC sended
+    case GYRO_ACC:{           pstruc_start = 8;   pstruc_stop = SAMPLE_DATA_LEN_ALL;          } break;  //  Only GYRO + ACC sended
+    case QUART_GYRO_ACC:{     pstruc_start = 0;   pstruc_stop = SAMPLE_DATA_LEN_ALL;          } break;  //  All data is sended QUAT + GYRO + ACC
   }
+}
+
+uint8_t IMU::getIMUData(uint8_t *len, uint8_t *send_buffer){
+  uint8_t return_val = 0;
 
     //  Reset the FIFO Buffer if we don't want to save this data
   if(counters->packet_number_counter < counters->pack_nr_before_send){
@@ -71,7 +75,9 @@ uint8_t IMU::getIMUData(uint8_t *len){
       data_buffer [5] = (uint8_t)(time_at_the_moment >> 16);
       data_buffer [6] = (uint8_t)(time_at_the_moment >> 24);
 
-      *len = sample_data_len * MAX_BUFFER_SIZE + 7;
+      *len = (pstruc_stop - pstruc_start) * MAX_BUFFER_SIZE + 7;
+
+      memcpy(send_buffer, data_buffer, *len);
 
       counters->packet_send_counter++;
       return_val = 1;
@@ -88,8 +94,8 @@ uint8_t IMU::getIMUData(uint8_t *len){
     * ================================================================================================ */
 
     uint8_t offset_buf [20] = {0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29, 32, 33, 36, 37};
-    for(uint8_t i = 0; i < sample_data_len; i++){
-      data_buffer [7 + i + sample_data_len*counters->buffer_counter] = fifoBuffer[offset_buf[i]]; 
+    for(uint8_t i = pstruc_start; i < pstruc_stop; i++){
+      data_buffer [7 + (i - pstruc_start) + (pstruc_stop-pstruc_start)*counters->buffer_counter] = fifoBuffer[offset_buf[i]]; 
     }
 
     counters->packet_number_counter = 1;

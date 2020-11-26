@@ -47,13 +47,19 @@ typedef struct __imu_module{
 // ===              Define Communication Commands               ===
 // ================================================================
 
-#define IMU_SENSOR_MODULE_RSP_SEND_DATA_F1                              0x20
-#define IMU_SENSOR_MODULE_RSP_SEND_DATA_F2                              0x21
-#define IMU_SENSOR_MODULE_REQ_CHANGE_DF                                 0x22
-#define IMU_SENSOR_MODULE_IND_DF_CHANGED                                0x23
+#define IMU_SENSOR_MODULE_RSP_SEND_DATA_F1                              0x20    //  QUAT
+#define IMU_SENSOR_MODULE_RSP_SEND_DATA_F2                              0x21    //  GYRO
+#define IMU_SENSOR_MODULE_RSP_SEND_DATA_F3                              0x22    //  ACC
+#define IMU_SENSOR_MODULE_RSP_SEND_DATA_F4                              0x23    //  GYRO + ACC
+#define IMU_SENSOR_MODULE_RSP_SEND_DATA_F5                              0x24    //  QUAT + GYRO + ACC
+#define IMU_SENSOR_MODULE_REQ_CHANGE_DF                                 0x25
+#define IMU_SENSOR_MODULE_IND_DF_CHANGED                                0x26
 
 #define DATA_FORMAT_1                                                   0x01
 #define DATA_FORMAT_2                                                   0x02
+#define DATA_FORMAT_3                                                   0x03
+#define DATA_FORMAT_4                                                   0x04
+#define DATA_FORMAT_5                                                   0x05
 
 #define IMU_SENSOR_MODULE_REQ_STATUS                                    0x30
 #define IMU_SENSOR_MODULE_IND_STATUS                                    0x31
@@ -85,12 +91,13 @@ typedef struct __imu_module{
 #define IMU_SENSOR_MODULE_IND_CALIBRATION_DONE                          0x72
 #define IMU_SENSOR_MODULE_IND_NEED_TO_CALIBRATE                         0x73
 
-#define IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED                     0x80
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_10HZ                        0x81
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_20HZ                        0x82
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_25HZ                        0x83
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_50HZ                        0x84
-#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_100HZ                       0x85
+#define IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_CHANGED                     0x80
+#define IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED                     0x81
+#define SAMPLING_FREQ_10HZ                                              0x01
+#define SAMPLING_FREQ_20HZ                                              0x02
+#define SAMPLING_FREQ_25HZ                                              0x03
+#define SAMPLING_FREQ_50HZ                                              0x04
+#define SAMPLING_FREQ_100HZ                                             0x05
 
 #define IMU_SENSOR_MODULE_REQ_GO_TO_SLEEP                               0x90
 #define IMU_SENSOR_MODULE_IND_SLEEP_MODE                                0x91
@@ -101,7 +108,11 @@ typedef struct __imu_module{
 #define IMU_SENSOR_MODULE_REQ_MILLIS                                    0xB0
 #define IMU_SENSOR_MODULE_RSP_MILLIS                                    0xB1
 
+#define IMU_SENSOR_MODULE_REQ_SW_VERSION                                0xC0
+#define IMU_SENSOR_MODULE_RSP_SW_VERSION                                0xC1
+
 #define ADV_MSG                                                         0xF0
+
 
 extern uint8_t previous_connected_modules [6];
 extern uint8_t sync_enable;
@@ -180,6 +191,18 @@ void IMU_reset_previous_connected_modules_array(void);
 
 
 void IMU_synchronisation_adaptation(imu_module *imu_array);
+/*-------------------------------------------------------------------------------------------------*/
+
+
+void IMU_get_status(imu_module *imu);
+/*-------------------------------------------------------------------------------------------------*/
+
+
+void IMU_get_software_version(imu_module *imu);
+/*-------------------------------------------------------------------------------------------------*/
+
+
+void IMU_adjust_mac_address(imu_module *imu, uint8_t *buffer);
 /*-------------------------------------------------------------------------------------------------*/
 
 #endif

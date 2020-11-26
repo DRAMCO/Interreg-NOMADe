@@ -79,7 +79,7 @@ void IMU_stop_measurements(imu_module *imu){
 }
 
 void IMU_change_sampling_frequency(imu_module *imu, uint8_t command){
-	BT_transmitMsg_CMD(imu->uart, command);
+	BT_transmitMsg_CMD_Data(imu->uart, IMU_SENSOR_MODULE_REQ_SAMPLING_FREQ_CHANGED, 1, &command);
 }
 
 
@@ -297,3 +297,17 @@ void IMU_set_sync_time_zero(imu_module *imu_array){
 		(imu_array + i)->sync_time = 0;
 	}
 }	
+
+void IMU_get_status(imu_module *imu){
+	BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_STATUS);
+}
+
+void IMU_get_software_version(imu_module *imu){
+	BT_transmitMsg_CMD(imu->uart, IMU_SENSOR_MODULE_REQ_SW_VERSION);
+}
+
+void IMU_adjust_mac_address(imu_module *imu, uint8_t *buffer){
+	for(uint8_t i = 0; i < 6; i++){
+		imu->mac_address [i] = *(buffer + i);
+	}
+}

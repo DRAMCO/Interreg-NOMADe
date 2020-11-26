@@ -164,6 +164,27 @@ void SD_CARD_COM_save_data(uint16_t number, uint32_t systemtick, uint8_t sensor_
 */
 
 
+void SD_CARD_COM_save_data(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer, uint8_t dv, uint8_t df){
+	HAL_GPIO_WritePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin, GPIO_PIN_SET);
+	
+	for(uint8_t i = 0; i < SIZE_SD_CARD_READ_BUF; i++){
+		int16_t new_data [dv];
+		for(uint8_t j = 0; j < dv; j++){
+			new_data [j] = (int16_t)(*(sd_card_buffer + i*dv + j));
+		}
+		switch(df){
+			case DATA_FORMAT_1: f_printf(&myFILE, "%d,%d,%d,%d,%d,%d,%d\n", sensor_number, number, systemtick, new_data [0], new_data [1], new_data [2], new_data [3]); break;
+			case DATA_FORMAT_2: f_printf(&myFILE, "%d,%d,%d,%d,%d,%d\n", sensor_number, number, systemtick, new_data [0], new_data [1], new_data [2]); break;
+			case DATA_FORMAT_3: f_printf(&myFILE, "%d,%d,%d,%d,%d,%d\n", sensor_number, number, systemtick, new_data [0], new_data [1], new_data [2]); break;
+			case DATA_FORMAT_4: f_printf(&myFILE, "%d,%d,%d,%d,%d,%d,%d,%d,%d\n", sensor_number, number, systemtick, new_data [0], new_data [1], new_data [2], new_data [3], new_data [4], new_data [5]); break;
+			case DATA_FORMAT_5: f_printf(&myFILE, "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n", sensor_number, number, systemtick, new_data [0], new_data [1], new_data [2], new_data [3], new_data [4], new_data [5], new_data [6], new_data [7], new_data [8], new_data [9]); break;
+		}
+	}
+	HAL_GPIO_WritePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin, GPIO_PIN_RESET);
+}
+
+
+
 void SD_CARD_COM_save_data_q(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer){
 	HAL_GPIO_WritePin(LED_BUSY_GPIO_Port, LED_BUSY_Pin, GPIO_PIN_SET);
 	for(uint8_t i = 0; i < SIZE_SD_CARD_READ_BUF; i++){

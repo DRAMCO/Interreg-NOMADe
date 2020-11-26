@@ -9,6 +9,12 @@
 //#define USB_DEBUG
 
 
+#define DCU_SW_VERSION  SW_V31
+
+#define SW_V30 	30
+#define SW_V31 	31
+
+
 #define BT_BAUDRATE					115200
 #define COM_BAUDRATE				2000000 //921600
 #define TABLET_BAUDRATE			1000000 //921600

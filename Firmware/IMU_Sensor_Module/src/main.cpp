@@ -186,7 +186,7 @@ void state_machine(){
       if(status_periferals) shutdown_periferals();
 
       attachInterrupt(digitalPinToInterrupt(BUTTON_INT), sleepISR, FALLING);
-      LowPower.powerDown(SLEEP_1S, ADC_OFF, BOD_OFF);
+      LowPower.powerDown(SLEEP_2S, ADC_OFF, BOD_OFF);
       detachInterrupt(0);
 
       if(!digitalRead(BUTTON_INT)){
@@ -306,6 +306,14 @@ void state_machine(){
     break;
 
 
+    /***    Init Measurement State    ****
+     * Initialize buffers
+    ****                              ***/
+    case INIT_MES:{
+      imu.initMeasurement();
+      state = RUNNING;
+    }
+
     /***    Running State                 ****
      * Wait for MPU6050 Intterupts
      * Process the data
@@ -365,11 +373,15 @@ void state_machine(){
 
 void processIMUData(){
   uint8_t len = 0;
-  uint8_t* data_send_buffer = imu.getDataBuffer();
-  if(imu.getIMUData(&len)){
+  //uint8_t* data_send_buffer = imu.getDataBuffer();
+  uint8_t data_send_buffer [255];
+  if(imu.getIMUData(&len, data_send_buffer)){
     switch(dataformat){
       case QUAT:{               *(data_send_buffer + 0) = IMU_SENSOR_MODULE_RSP_SEND_DATA_F1;    } break;
-      case QUART_GYRO_ACC:{     *(data_send_buffer + 0) = IMU_SENSOR_MODULE_RSP_SEND_DATA_F2;    } break;
+      case GYRO:{               *(data_send_buffer + 0) = IMU_SENSOR_MODULE_RSP_SEND_DATA_F2;    } break;
+      case ACC:{                *(data_send_buffer + 0) = IMU_SENSOR_MODULE_RSP_SEND_DATA_F3;    } break;
+      case GYRO_ACC:{           *(data_send_buffer + 0) = IMU_SENSOR_MODULE_RSP_SEND_DATA_F4;    } break;
+      case QUART_GYRO_ACC:{     *(data_send_buffer + 0) = IMU_SENSOR_MODULE_RSP_SEND_DATA_F5;    } break;
     }
     bt.transmitData(len, data_send_buffer);
   }
@@ -381,6 +393,8 @@ void shutdown_periferals(void){
   sync_executed = 0;
   synchronisation = 0;
   status_periferals = 0;
+
+  dataformat = QUAT;
 
   imu.reset_counters();
   bt.stopScanning(); // If there goes something wrong with the synchronisation or a reset of the bt module could also help

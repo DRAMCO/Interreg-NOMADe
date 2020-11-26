@@ -13,7 +13,7 @@
  *         File: main.c
  *      Created: 2020-02-27
  *       Author: Jarne Van Mulders
- *      Version: V3.0
+ *      Version: V3.1
  *
  *  Description: Firmware IMU sensor module for the NOMADe project
  *
@@ -23,7 +23,7 @@
  
  //	Version	1: Test version + making init libraries
  // Version 2: Ringbuffers + USB COM communication and control possible
- // Version 3: Add new dataformat (QUAT + GYRO + ACC)
+ // Version 3: Add new dataformats
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -198,7 +198,8 @@ int main(void)
 	UART_Ringbuffer_Init(&huart7);
 	UART_Ringbuffer_Init(&huart8);
 
-	USB_COM_print("************************************\n   NOMADe Mainboard V2.1\n************************************\n");
+	uint16_t software_version = DCU_SW_VERSION;
+	USB_COM_print("************************************\n   NOMADe Mainboard V3.1\n************************************\n");
  
 	USB_COM_show_menu();
  
@@ -445,12 +446,29 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 			imu->measuring = 1;
 		} break;
 		
-		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F1:{
+		case IMU_SENSOR_MODULE_IND_MEASUREMENTS_STARTED_WITHOUT_SYNC:{
+			USB_COM_print_info(imu->name, "Measurement started without synchronisation");
+			imu->measuring = 1;
+		} break;
+		
+		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F1:{ 								//  QUAT
 			rsv_data_handler(rsvbuf, imu->number, DATA_FORMAT_1);
 		} break;
 		
-		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F2:{
+		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F2:{ 								//  GYRO
 			rsv_data_handler(rsvbuf, imu->number, DATA_FORMAT_2);
+		} break;
+		
+		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F3:{ 								//	ACC
+			rsv_data_handler(rsvbuf, imu->number, DATA_FORMAT_3);
+		} break;
+		
+		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F4:{ 								//	GYRO + ACC
+			rsv_data_handler(rsvbuf, imu->number, DATA_FORMAT_4);
+		} break;
+				
+		case IMU_SENSOR_MODULE_RSP_SEND_DATA_F5:{ 								//	QUAT + GYRO + ACC
+			rsv_data_handler(rsvbuf, imu->number, DATA_FORMAT_5);
 		} break;
 		
 		case IMU_SENSOR_MODULE_IND_CALIBRATION_STARTED:{
@@ -458,7 +476,14 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 		} break;
 		
 		case IMU_SENSOR_MODULE_IND_SAMPLING_FREQ_CHANGED:{
-			USB_COM_print_info(imu->name, "Frequency changed");
+			switch(*(rsvbuf + 12)){
+				case SAMPLING_FREQ_10HZ: USB_COM_print_info(imu->name, "Frequency changed to 10 Hz"); break;
+				case SAMPLING_FREQ_20HZ: USB_COM_print_info(imu->name, "Frequency changed to 20 Hz"); break;
+				case SAMPLING_FREQ_25HZ: USB_COM_print_info(imu->name, "Frequency changed to 25 Hz"); break;
+				case SAMPLING_FREQ_50HZ: USB_COM_print_info(imu->name, "Frequency changed to 50 Hz"); break;
+				case SAMPLING_FREQ_100HZ: USB_COM_print_info(imu->name, "Frequency changed to 100 Hz"); break;
+				default:{}
+			}
 		} break;
 		
 		case IMU_SENSOR_MODULE_IND_BATTERY_LOW_ERROR:{
@@ -483,8 +508,11 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 		
 		case IMU_SENSOR_MODULE_IND_DF_CHANGED:{
 			USB_COM_print_info(imu->name, "Dataformat changed");
-			if(*(rsvbuf + 12) == 1) USB_COM_print_info(imu->name, "Format 1 QUAT");
-			if(*(rsvbuf + 12) == 2) USB_COM_print_info(imu->name, "Format 2 QUAT + GYRO + ACC");
+			if(*(rsvbuf + 12) == 1) USB_COM_print_info(imu->name, "Dataformat QUAT");
+			if(*(rsvbuf + 12) == 2) USB_COM_print_info(imu->name, "Dataformat GYRO");
+			if(*(rsvbuf + 12) == 3) USB_COM_print_info(imu->name, "Dataformat ACC");
+			if(*(rsvbuf + 12) == 4) USB_COM_print_info(imu->name, "Dataformat GYRO + ACC");
+			if(*(rsvbuf + 12) == 5) USB_COM_print_info(imu->name, "Dataformat QUAT + GYRO + ACC");
 		} break;
 			
 		case IMU_SENSOR_MODULE_IND_SYNC_DONE:{
@@ -512,13 +540,34 @@ void rsv_data_msg_handler(uint8_t * rsvbuf, uint8_t len, imu_module *imu){
 			sprintf(string, "%sIMU Syst Tick: %d \n", imu->name, millis); 
 			UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
 		} break;
-	
+		
+		case IMU_SENSOR_MODULE_RSP_SW_VERSION:{
+			float software_version = *(rsvbuf + 12)/10.0;
+			USB_COM_print(imu->name);
+			char string [50];
+			sprintf(string, "IMU Sensor Module Software Version: %.01f\n", software_version); 
+			UART_COM_write(&huart5, (uint8_t *)string, strlen(string));
+		} break;
+		
+		case IMU_SENSOR_MODULE_IND_STATUS:{
+			enum Sensor_Reader_State{SLEEP, STARTUP, WAIT_FOR_CONNECTION, CALIBRATION, IDLE, SYNC, INIT_MES, RUNNING, CHARGING, BATTERY_LOW};
+			switch(*(rsvbuf + 12)){
+				case SLEEP: USB_COM_print_info(imu->name, "SLEEP-MODE"); break;
+				case STARTUP: USB_COM_print_info(imu->name, "STARTUP-MODE"); break;
+				case WAIT_FOR_CONNECTION: USB_COM_print_info(imu->name, "WAIT_FOR_CONNECTION-MODE"); break;
+				case CALIBRATION: USB_COM_print_info(imu->name, "CALIBRATION-MODE"); break;
+				case IDLE: USB_COM_print_info(imu->name, "IDLE-MODE"); break;
+				case SYNC: USB_COM_print_info(imu->name, "SYNC-MODE"); break;
+				case INIT_MES: USB_COM_print_info(imu->name, "INIT_MES-MODE"); break;
+				case RUNNING: USB_COM_print_info(imu->name, "MEASURING-MODE"); break;
+				case BATTERY_LOW: USB_COM_print_info(imu->name, "BATTERY_LOW-MODE"); break;
+				default:{}
+			} break;
+		} break;
 		default:{
 		}
 	}
 }
-
-
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
   if(GPIO_Pin == USER_BUTTON_Pin){ //GPIO_PIN_2
@@ -701,7 +750,7 @@ void convertBuffer(uint8_t * buf, uint8_t sensor_number){
 	
 	
 	#ifdef SAVE_QUARTERNIONS_SD_CARD
-		SD_CARD_COM_save_data_q(pakket_send_nr, timestamp, sensor_number, sd_card_buffer);
+		//SD_CARD_COM_save_data(pakket_send_nr, timestamp, sensor_number, sd_card_buffer);
   #endif
 }
 
@@ -717,7 +766,10 @@ void rsv_data_handler(uint8_t * buf, uint8_t sensor_number, uint8_t data_format)
 	
 	switch(data_format){
 		case DATA_FORMAT_1: {	data_values = 4;		} break;
-		case DATA_FORMAT_2: {	data_values = 10;		} break;
+		case DATA_FORMAT_2: {	data_values = 3;		} break;
+		case DATA_FORMAT_3: {	data_values = 3;		} break;
+		case DATA_FORMAT_4: {	data_values = 6;		} break;
+		case DATA_FORMAT_5: {	data_values = 10;		} break;
 	}
 	
 	//int16_t sd_card_buffer [NUMBER_OF_DATA_READS_IN_BT_PACKET * data_values];
@@ -744,10 +796,9 @@ void rsv_data_handler(uint8_t * buf, uint8_t sensor_number, uint8_t data_format)
     }
   }
 	
-	switch(data_format){
-		case DATA_FORMAT_1: SD_CARD_COM_save_data_q(pakket_send_nr, timestamp, sensor_number, sd_card_buffer); 	break;
-		case DATA_FORMAT_2: SD_CARD_COM_save_data_qga(pakket_send_nr, timestamp, sensor_number, sd_card_buffer); 	break; //!!!!!!!!!!
-	}
+	SD_CARD_COM_save_data(pakket_send_nr, timestamp, sensor_number, sd_card_buffer, data_values, data_format);
+	//SD_CARD_COM_save_data_qga(pakket_send_nr, timestamp, sensor_number, sd_card_buffer);
+	//SD_CARD_COM_save_data_q(pakket_send_nr, timestamp, sensor_number, sd_card_buffer);
 }
 /*****************************************************************************************************/
 

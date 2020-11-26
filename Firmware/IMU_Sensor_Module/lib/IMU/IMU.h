@@ -18,7 +18,8 @@ class IMU {
 
         void powerup(void);
         void powerdown(void);
-        uint8_t getIMUData(uint8_t *len);
+        void initMeasurement();
+        uint8_t getIMUData(uint8_t *len, uint8_t *send_buffer);
         uint8_t* getDataBuffer();
         void reset_counters(void);
         void calibrate(void);
@@ -30,6 +31,7 @@ class IMU {
         Variables *counters;
         LED *led;
         uint8_t data_buffer[255];
+        uint8_t pstruc_start = 0, pstruc_stop = 0;
 };
 
 #endif

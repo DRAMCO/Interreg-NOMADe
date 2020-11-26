@@ -32,42 +32,28 @@
 
 
 FRESULT SD_CARD_COM_mount(void);
-/*-------------------------------------------------------------------------------------------------*/
-
-
 FRESULT SD_CARD_COM_unmount(void);
 /*-------------------------------------------------------------------------------------------------*/
 
 
 void SD_CARD_COM_create_new_file(void);
-/*-------------------------------------------------------------------------------------------------*/
-
-
 uint16_t SD_CARD_COM_check_existing_files(void);
 /*-------------------------------------------------------------------------------------------------*/
 
 
 void SD_CARD_COM_open_file(void);
-/*-------------------------------------------------------------------------------------------------*/
-
-
 void SD_CARD_COM_close_file(void);
-/*-------------------------------------------------------------------------------------------------*/
-
-
-void SD_CARD_COM_save_data_q(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer);
-void SD_CARD_COM_save_data_qga(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer);
-/*-------------------------------------------------------------------------------------------------*/
-
-
 FRESULT SD_CARD_COM_open_close(FIL* fp, const TCHAR* p, BYTE mode);
 /*-------------------------------------------------------------------------------------------------*/
 
 
-void SD_CARD_COM_set_status(uint8_t status);
+void SD_CARD_COM_save_data(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer, uint8_t dv, uint8_t df);
+void SD_CARD_COM_save_data_qga(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer);
+void SD_CARD_COM_save_data_q(uint16_t number, uint32_t systemtick, uint8_t sensor_number, int16_t *sd_card_buffer);
 /*-------------------------------------------------------------------------------------------------*/
 
 
+void SD_CARD_COM_set_status(uint8_t status);
 uint8_t SD_CARD_COM_get_status(void);
 /*-------------------------------------------------------------------------------------------------*/
 
