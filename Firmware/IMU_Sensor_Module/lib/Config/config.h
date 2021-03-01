@@ -35,8 +35,6 @@
 // ===          Define Bluetooth communication baudrate         ===
 // ================================================================
 
-#define BT_UART_BAUDRATE            BAUDRATE_115200
-
 #define BAUDRATE_9600               0x00
 #define BAUDRATE_19200              0x01
 #define BAUDRATE_38400              0x02
@@ -44,6 +42,8 @@
 #define BAUDRATE_230400             0x04
 #define BAUDRATE_460800             0x05
 #define BAUDRATE_921600             0x06
+
+#define BT_UART_BAUDRATE            BAUDRATE_115200
 
 // ================================================================
 // ===                    Define MPU Settings                   ===

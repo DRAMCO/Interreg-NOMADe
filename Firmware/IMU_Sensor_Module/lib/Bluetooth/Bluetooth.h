@@ -125,9 +125,8 @@ class BLUETOOTH {
         void stopScanning();
 
             //  Baudrate management functions
-        void updateBaudrate(uint8_t baudrate_index);
-        uint8_t getUARTBaudrate();
-        uint8_t setUARTBaudrate(uint8_t baudrate_index);
+        void getUARTBaudrate();
+        void setUARTBaudrate(uint8_t baudrate_index);
 
             //  Send message through Bluetooth
         void transmitFrameMsg(uint8_t communication_cmd);

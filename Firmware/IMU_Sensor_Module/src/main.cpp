@@ -69,6 +69,8 @@ uint8_t dataformat = QUAT;
 
 uint32_t startup_time = 0;
 uint32_t sync_time = 0;
+uint32_t baudrate_array [] = {9600, 19200, 38400, 115200, 230400, 460800, 921600};
+uint32_t baud_pointer = 3;
 
 // ================================================================
 // ===                    Global booleans                       ===
@@ -81,6 +83,7 @@ bool sync_executed = 0;
 bool synchronisation = 0;
 bool battery_low_state = 0;
 bool interruptIMU = false;
+bool baud_correct = false;
 
 // ================================================================
 // ===                  STATIC VOID FUNCTIONS                   ===
@@ -134,16 +137,11 @@ void setup(){
       //  Set analog reference to external voltage AREF pin
     analogReference(EXTERNAL);
 
+    Serial.flush();
+
       // Reset BT module
     bt.reset();
     delay(100);
-
-      //  Update UART Baudrate (MCU + BT module)
-    //bt.updateBaudrate(BT_UART_BAUDRATE);
-
-    bt.changeScanTiming();    // Not Low Power !!!
-    bt.changeScanFactor();    // Not Low Power !!!
-
 }
 
 // ================================================================
@@ -155,8 +153,11 @@ void loop(){
     //  Check the incoming BLE data
   btcom.incoming_data_handler();
 
+    //  Check baudrate is matched with the Proteus II modem
+  btcom.controle_check_baudrate();
+
     //  Check state machine
-  state_machine();
+  if(btcom.baudrate_ok()) state_machine();
 
     //  Reset the WDT
   wdt_reset();

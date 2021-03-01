@@ -87,9 +87,12 @@ extern bool sync_now;
 extern bool sync_executed;
 extern bool synchronisation;
 extern bool battery_low_state;
+extern bool baud_correct;
 
 extern uint32_t sync_time;
 extern uint32_t startup_time;
+extern uint32_t baudrate_array [];
+extern uint32_t baud_pointer;
 
 class BTCOM {
     public:
@@ -98,12 +101,20 @@ class BTCOM {
         void incoming_data_handler();
         void communication_management(uint8_t *rsv_buffer);
         void rsv_msg_handler(uint8_t *rsv_buffer);
+        void update_baudrate();
+
+        void controle_check_baudrate();
+        bool baudrate_ok();
 
     private:
         BLUETOOTH *bt;
         BMS *bms;
         MPU6050 *mpu;
         Variables *counters;
+
+        bool baud_changed = false;
+        bool check_baud = true;
+        uint8_t counter_baud_check = 0;
 };
 
 #endif

@@ -88,83 +88,13 @@ void BLUETOOTH::stopScanning(){
 // ===              Baudrate management functions               ===
 // ================================================================
 
-void BLUETOOTH::updateBaudrate(uint8_t baudrate_index){
-    uint32_t baudrate_array [] = {9600, 19200, 38400, 115200, 230400, 460800, 921600};
-    bool baudrate_found = 0;
-    uint8_t i, current_baud;
-
-    while(!baudrate_found && i < 7){
-      Serial.flush();
-      Serial.begin(baudrate_array[i]);
-      current_baud = getUARTBaudrate();
-      Serial.write(current_baud);
-      if(current_baud != 0xFF){
-        baudrate_found = 1;
-        break;
-      }
-      i++;
-    }
-  
-    //Serial.flush();
-    //Serial.begin(baudrate_array[current_baud]);
-    //Serial.write(current_baud);
-    
-    delay(10);  
-
-    if(baudrate_found == 1 && current_baud != BT_UART_BAUDRATE){
-      if(setUARTBaudrate(BT_UART_BAUDRATE)){
-        #ifdef DEBUG
-            Serial.println("Baudrate succesfully changed!");
-        #endif
-      }
-    }
-
-    Serial.flush();
-    Serial.begin(baudrate_array[BT_UART_BAUDRATE]);
-
-    delay(500);
+void BLUETOOTH::getUARTBaudrate(){
+    transmitFrame(CMD_GET_REQ, UART_BaudrateIndex);
 }
 
-
-uint8_t BLUETOOTH::getUARTBaudrate(){
-
-    Serial.flush();
-  transmitFrame(CMD_GET_REQ, UART_BaudrateIndex);
-
-  delay(10);
-
-
-  uint8_t rsv_msg [20];
-  if(receiveFrame(rsv_msg, 100)){
-    return rsv_msg[5];
-  }
-  else return 0xFF;
-
-/*
-    Serial.write(Serial.read());
-    Serial.write(Serial.read());
-    Serial.write(Serial.read());
-    Serial.write(Serial.read());
-    Serial.write(Serial.read());
-    Serial.write(Serial.read());
-    return 0xFF;
-*/
-}
-
-uint8_t BLUETOOTH::setUARTBaudrate(uint8_t baudrate_index){
+void BLUETOOTH::setUARTBaudrate(uint8_t baudrate_index){
     uint8_t data [] = {UART_BaudrateIndex, baudrate_index};
     transmitFrame(CMD_SET_REQ, 2, data);
-
-    delay(10);
-    
-    uint8_t rsv_msg [20];
-    if(receiveFrame(rsv_msg, 10) == 0){
-        return 0;
-    }
-    else{
-       if(rsv_msg[4] == 0) return 1;
-    }
-    return 0;
 }
 
 // ================================================================

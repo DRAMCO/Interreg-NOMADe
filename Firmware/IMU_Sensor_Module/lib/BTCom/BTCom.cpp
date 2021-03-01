@@ -58,11 +58,14 @@ void BTCOM::communication_management(uint8_t *rsv_buffer){
 
         case CMD_TXCOMPLETE_RSP:{
             //  Data has been sent
+            //if(*(rsv_buffer + 4) == 0x00) tx_packet_succes_counter++;
+            //else tx_packet_failed_counter++;
         }
         break;
 
         case CMD_GETSTATE_CNF:{
             //  Current module state
+            baud_correct = true;
         }
         break;
 
@@ -327,4 +330,49 @@ void BTCOM::rsv_msg_handler(uint8_t *rsv_buffer){
 
   }
 
+}
+
+void BTCOM::update_baudrate(){
+  if(baud_pointer < 4)  baud_pointer++;
+  else                  baud_pointer = 3;
+  Serial.flush();
+  Serial.begin(baudrate_array[baud_pointer]);
+  bt->reset();
+}
+
+
+void BTCOM::controle_check_baudrate(){
+    //  Check baudrate is matching
+  if(!baud_correct){
+    delay(10);
+    if(check_baud){
+      check_baud = false;
+      update_baudrate();
+    }
+    else{
+      if(counter_baud_check > 50){
+        counter_baud_check = 0;
+        check_baud = true;
+      }
+      counter_baud_check++;
+    }
+  } 
+
+    //  Update baudrate
+  if(baud_correct && !baud_changed){
+    if(baud_pointer != BT_UART_BAUDRATE){
+      bt->setUARTBaudrate(BT_UART_BAUDRATE);
+      delay(500);
+      baud_correct = false;
+    }
+    baud_changed = true;
+    
+      //  Eénmalig uitvoeren
+    bt->changeScanTiming();    // Not Low Power !!!
+    bt->changeScanFactor();    // Not Low Power !!!
+  }
+}
+
+bool BTCOM::baudrate_ok(){
+  return (baud_correct && baud_changed);
 }

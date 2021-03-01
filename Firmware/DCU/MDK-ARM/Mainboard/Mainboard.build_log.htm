@@ -22,16 +22,35 @@ Dialog DLL:      TCM.DLL V1.46.0.0
  
 <h2>Project:</h2>
 C:\Users\Jarne\Documents\GitHub\Interreg-NOMADe\Firmware\DCU\MDK-ARM\Mainboard.uvprojx
-Project File Date:  11/10/2020
+Project File Date:  02/14/2021
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'C:\Keil_v5\ARM\ARMCC\Bin'
 Build target 'Mainboard'
-compiling usb_com.c...
+compiling main.c...
+../Src/main.c(201): warning:  #177-D: variable "software_version"  was declared but never referenced
+  	uint16_t software_version = DCU_SW_VERSION;
+../Src/main.c(566): warning:  #111-D: statement is unreachable
+  		} break;
+../Src/main.c(599): warning:  #550-D: variable "timestamp"  was set but never used
+  	uint32_t timestamp;
+../Src/main.c(600): warning:  #550-D: variable "pakket_send_nr"  was set but never used
+  	uint16_t pakket_send_nr;
+../Src/main.c(611): warning:  #550-D: variable "sd_card_buffer"  was set but never used
+  		int16_t sd_card_buffer [NUMBER_OF_DATA_READS_IN_BT_PACKET * 4];
+../Src/main.c(120): warning:  #177-D: function "MX_SDMMC1_SD_Init"  was declared but never referenced
+  static void MX_SDMMC1_SD_Init(void);
+../Src/main.c(1058): warning:  #177-D: function "IOExpander_toggle"  was declared but never referenced
+  void IOExpander_toggle(I2C_HandleTypeDef *hi2c, uint8_t address, uint8_t io){
+../Src/main.c(597): warning:  #177-D: function "convertBuffer"  was declared but never referenced
+  void convertBuffer(uint8_t * buf, uint8_t sensor_number){
+../Src/main.c(808): warning:  #177-D: function "getYawPitchRoll"  was declared but never referenced
+  void getYawPitchRoll(int16_t *data, float *newdata){
+../Src/main.c: 9 warnings, 0 errors
 linking...
 Program Size: Code=44604 RO-data=1608 RW-data=288 ZI-data=60528  
 FromELF: creating hex file...
-"Mainboard\Mainboard.axf" - 0 Error(s), 0 Warning(s).
+"Mainboard\Mainboard.axf" - 0 Error(s), 9 Warning(s).
 
 <h2>Software Packages used:</h2>
 

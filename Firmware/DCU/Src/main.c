@@ -57,8 +57,8 @@ UART_HandleTypeDef huart6;  //  BT2
 
 
 //#define FIRST_SET_OF_MODULES
-#define SECOND_SET_OF_MODULES
-//#define THIRD_SET_OF_MODULES
+//#define SECOND_SET_OF_MODULES
+#define THIRD_SET_OF_MODULES
 
 #ifdef FIRST_SET_OF_MODULES
 imu_module imu_1 = {1, &huart4, {0x00, 0x18, 0xDA, 0x20, 0x14, 0x4B}, "BLE slot 1: ", 0, 0, 0, 0, 0 };
