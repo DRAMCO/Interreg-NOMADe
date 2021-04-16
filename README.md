@@ -22,4 +22,4 @@
 }
 ```
 
- ![Operators](Images/operators.jpg)
+ ![Operators](Images/operators.png)
