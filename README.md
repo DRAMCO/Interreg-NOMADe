@@ -1,6 +1,8 @@
 # Interreg NOMADe
  Documentation about the Interreg NOMADe project
 
+ ![Logo](Images/logo.jpg)
+
 ## Firmware
  This map contains the c/c++ code for both the DCU (Data Capturing Unit) and the motion sensor module
  
@@ -19,3 +21,5 @@
   doi = {10.5281/zenodo.4005810}
 }
 ```
+
+ ![Operators](Images/operators.jpg)
